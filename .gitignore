@@ -74,3 +74,6 @@ acs-*.bib
 # LaTeX make
 *.make
 *.d
+
+# Emacs
+auto
