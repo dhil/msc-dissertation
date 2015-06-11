@@ -73,3 +73,4 @@ acs-*.bib
 
 # LaTeX make
 *.make
+*.d
