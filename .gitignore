@@ -70,3 +70,6 @@ acs-*.bib
 *.mtc
 *.mtc[0-9]
 *.mtc[1-9][0-9]
+
+# LaTeX make
+*.make
