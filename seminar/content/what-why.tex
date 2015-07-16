@@ -1,0 +1,90 @@
+\section{Project description}
+\begin{frame}[fragile]
+  \frametitle{Project description}
+  \begin{block}{Motivation}
+    \begin{itemize}
+      \item Monads are great abstractions for programming with \emph{explicit} effects.\\
+            But in general monads do not compose.
+      \item Monad Transformers (MT) provide compositionality for monads.\\
+            But MTs impose an implicit ordering on effects.
+    \end{itemize}
+  \end{block}    
+  \begin{block}{Problem statement}
+    \emph{How may we obtain modular, composable and unordered effects?}
+  \end{block}
+  \uncover<2->{
+    Answer: Handlers for algebraic effects using row polymorphism!}
+\uncover<3->{
+ \begin{block}{Project aim}
+   Provide an implementation of first-class effect handlers in the web-oriented functional programming language Links \cite{Links}.
+ \end{block}
+}
+% \begin{block}{}
+%   \begin{columns}
+%     \begin{column}{.5\textwidth}
+%       Phonebook example using monads
+%       \begin{lstlisting}
+% askNameAndNumber :: IO (Maybe (String,String))
+% askNameAndNumber  = do
+%   putStr "Enter your name> "
+%   name    <- getLine
+%   putStr "Enter your number> "
+%   number  <- getLine
+%   if isValid number
+%     then (*\alert<2->{return \$ Just (name,number)}*)
+%     else (*\alert<2->{return \$ Nothing}*)
+
+% isValid :: String -> Bool
+% isValid = all isDigit
+%       \end{lstlisting}
+%     \end{column}
+%     \begin{column}{.5\textwidth}
+%       Phonebook example using MTs
+% \begin{lstlisting}
+% askNameAndNumberT :: MaybeT IO (String,String)
+% askNameAndNumberT = do
+%   (*\alert<3->{lift}*) $ putStr "Enter your name> "
+%   name   <- lift getLine
+%   (*\alert<3->{lift}*) $ putStr "Enter your number> "
+%   number <- getValidNumber
+%   return (name,number)
+  
+
+% getValidNumber :: MaybeT IO String
+% getValidNumber = do num <- lift getLine
+%                     guard (isValid num)
+%                     return num
+% \end{lstlisting}
+%     \end{column}
+%   \end{columns}
+% \end{block}
+\end{frame}
+
+% \begin{frame}
+%   \frametitle{Project description (II)}
+%   \begin{block}{Problem statement}
+%     \emph{How may we obtain modular, composable and unordered effects?}
+%   \end{block}
+%   \uncover<2->{
+%     Answer: Handlers for algebraic effects!}
+% \uncover<3->{
+%  \begin{block}{Project aim}
+%    Provide an implementation of first-class effect handlers in the web-oriented functional programming language Links \cite{Links}.
+%  \end{block}
+% }
+% \end{frame}
+
+% \begin{frame}
+%  \frametitle{Related work}
+%  A handful of implementations already exists:
+%  \begin{itemize}
+%    \item Eff -- looks and feels like OCaml.
+%    \item Haskell libraries, e.g.\small{ \href{http://homepages.inf.ed.ac.uk/slindley/papers/handlers.pdf}{\texttt{effect-handlers}}, \href{http://www.cs.ox.ac.uk/people/nicolas.wu/papers/Scope.pdf}{\texttt{scoped-handlers}}, \href{http://homepages.inf.ed.ac.uk/slindley/papers/frankly-draft-march2014.pdf}{\texttt{Frank}}}.
+%    \item Idris library \href{http://eb.host.cs.st-andrews.ac.uk/drafts/effects.pdf}{\small\texttt{Effects}}.
+%  \end{itemize}
+%  How does our work differ from the aforementioned?
+%  \begin{itemize}
+%    \item Shortcoming: Limited effect polymorphism.
+%    \item We propose, along the lines of Kammar et al. \cite{Kammar2013}, an implementation using row polymorphism.
+%  \end{itemize}
+% \end{frame}

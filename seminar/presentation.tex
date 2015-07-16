@@ -1,0 +1,278 @@
+%% Packages initialisation
+\documentclass[10pt,compress]{beamer}
+\usepackage[utf8]{inputenc}               % Enable UTF-8 compatible typing
+\usepackage{hyperref}                     % Interactive PDF
+\usepackage{mathtools}                    % Displaying math formulas etc.
+\usepackage{tikz}                         % Drawing
+\usetikzlibrary{trees}
+\usepackage{listings}                     % Source code listings
+
+\useinnertheme{rectangles}
+\mode<beamer>{\setbeamertemplate{blocks}[rounded][shadow=false]}
+\setbeamercolor{block title}{bg=blue!10,fg=black}
+\makeatletter
+\pgfdeclareverticalshading[lower.bg,upper.bg]{bmb@transition}{200cm}{%
+  color(0pt)=(upper.bg); color(2pt)=(upper.bg); color(4pt)=(upper.bg)}
+\makeatother
+
+%% Enable slide numbering
+\makeatletter
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.3\paperwidth,ht=2.25ex,dp=1ex,left]{author in head/foot}%
+    \hspace*{2ex}\usebeamerfont{author in head/foot}\insertshortauthor~~\beamer@ifempty{\insertshortinstitute}{}{(\insertshortinstitute)}
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.1\paperwidth,ht=2.25ex,dp=1ex,center]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\insertshortdate{}
+  \end{beamercolorbox}
+  \begin{beamercolorbox}[wd=.1\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\insertframenumber /\inserttotalframenumber\hspace*{2ex}
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+\makeatother
+
+%% Hide navigation buttons
+\beamertemplatenavigationsymbolsempty
+
+%% Small verbatim font size
+\makeatletter
+\def\verbatim{\footnotesize\@verbatim \frenchspacing\@vobeyspaces \@xverbatim}
+\makeatother
+
+%% Configure lstlisting environment
+\lstdefinestyle{compact}{
+    basicstyle=\ttfamily\tiny,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=none,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    escapeinside={(*}{*)}
+}
+
+\lstdefinestyle{spacey}{
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=none,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    escapeinside={(*}{*)}
+}
+
+\lstset{style=compact}
+
+%% "Defined as" macro
+\newcommand\defas{\mathrel{\overset{\makebox[0pt]{\mbox{\normalfont\tiny\sffamily def}}}{=}}}
+
+%% Meta information
+\author[Daniel Hillerström]{Daniel Hillerström\\\footnotesize{\href{mailto:s1467124@sms.ed.ac.uk}{s1467124@sms.ed.ac.uk}}}
+\title[Handlers for Algebraic Effects in Links (MSc prog. seminar)]{MSc dissertation progress presentation}
+\subtitle{\textit{Handlers for Algebraic Effects in Links}}
+\institute[University of Edinburgh]{School of Informatics\\University of Edinburgh}
+\date{\today}
+
+%% Load slides
+\begin{document}
+% Front slide
+\begin{frame}[plain]
+  \maketitle
+\end{frame}
+% Load subsequent slides
+\input{content/index}
+
+% Bibliography
+\bibliographystyle{unsrt}
+\begin{frame}
+  \frametitle{References}
+  \bibliography{references}
+\end{frame}
+
+% Backup slides
+\begin{frame}[fragile,t,label={backup}]
+  \frametitle{Computations as trees (I)}
+  \begin{columns}
+    \begin{column}{.5\linewidth}
+    Computation
+\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+fun choiceC() {
+ var x =
+  if (do Choose()) { 20 }
+  else { 10 }
+ var y = 
+   if (do Choose()) { 0 }
+   else { 5 }
+ x + y
+}
+\end{lstlisting}
+    \end{column}
+    \begin{column}{.5\linewidth}
+Handler
+\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+fun handler(x) {
+  handle(x) {
+   case Choose(_,k) -> k(true)
+   case Return(x)   -> x
+  }
+}
+\end{lstlisting}
+    \end{column}
+  \end{columns}
+  \begin{center}
+\only<1-1>{\begin{tikzpicture}[level distance=1.5cm,
+level 1/.style={sibling distance=3.5cm},
+level 2/.style={sibling distance=1cm}]
+%\tikzstyle{every node}=[circle,draw]
+
+\node (Root) [red,rectangle] {Choose}
+    child { node [red,label={left:$\{x\mapsto 20\}$}] {Choose} 
+      child { node[draw=none] {20}
+      }
+      child { node[draw=none] {25} 
+      }
+      edge from parent node [draw=none,left] {true}
+    }
+    child { node [red,label={right:$\{x\mapsto 10\}$}] {Choose}
+      child { node[draw=none] {10}
+      }
+      child { node[draw=none] {15}       
+      }
+      edge from parent node [draw=none,right] {false}
+    };
+\end{tikzpicture}}
+\only<2-2>{$\Rightarrow 20$}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile,t]
+  \frametitle{Computations as trees (II)}
+  \begin{columns}
+    \begin{column}{.5\linewidth}
+    Computation
+\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+fun choiceC() {
+ var x =
+  if (do Choose()) { 20 }
+  else { 10 }
+ var y = 
+   if (do Choose()) { 0 }
+   else { 5 }
+ x + y
+}
+\end{lstlisting}
+    \end{column}
+    \begin{column}{.5\linewidth}
+Handler
+\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+fun handler(x) {
+  handle(x) {
+   case Choose(_,k) -> k(false)
+   case Return(x)   -> x
+  }
+}
+\end{lstlisting}
+    \end{column}
+  \end{columns}
+  \begin{center}
+\only<1-1>{\begin{tikzpicture}[level distance=1.5cm,
+level 1/.style={sibling distance=3.5cm},
+level 2/.style={sibling distance=1cm}]
+%\tikzstyle{every node}=[circle,draw]
+
+\node (Root) [red,rectangle] {Choose}
+    child { node [red,label={left:$\{x\mapsto 20\}$}] {Choose} 
+      child { node[draw=none] {20}
+      }
+      child { node[draw=none] {25} 
+      }
+      edge from parent node [draw=none,left] {true}
+    }
+    child { node [red,label={right:$\{x\mapsto 10\}$}] {Choose}
+      child { node[draw=none] {10}
+      }
+      child { node[draw=none] {15}       
+      }
+      edge from parent node [draw=none,right] {false}
+    };
+\end{tikzpicture}}
+\only<2-2>{$\Rightarrow 15$}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile,t]
+  \frametitle{Computations as trees (III)}
+  \begin{columns}
+Handler
+    \begin{column}{.5\linewidth}
+    Computation
+\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+fun choiceC() {
+ var x =
+  if (do Choose()) { 20 }
+  else { 10 }
+ var y = 
+   if (do Choose()) { 0 }
+   else { 5 }
+ x + y
+}
+\end{lstlisting}
+    \end{column}
+    \begin{column}{.5\linewidth}
+Handler
+\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+fun handler(x) {
+  handle(x) {
+   case Choose(_,k) -> 
+     k(true) ++ k(false)
+   case Return(x)   -> [x]
+  }
+}
+\end{lstlisting}
+    \end{column}
+  \end{columns}
+  \begin{center}
+\only<1-1>{\begin{tikzpicture}[level distance=1.5cm,
+level 1/.style={sibling distance=3.5cm},
+level 2/.style={sibling distance=1cm}]
+%\tikzstyle{every node}=[circle,draw]
+
+\node (Root) [red,rectangle] {Choose}
+    child { node [red,label={left:$\{x\mapsto 20\}$}] {Choose} 
+      child { node[draw=none] {20}
+      }
+      child { node[draw=none] {25} 
+      }
+      edge from parent node [draw=none,left] {true}
+    }
+    child { node [red,label={right:$\{x\mapsto 10\}$}] {Choose}
+      child { node[draw=none] {10}
+      }
+      child { node[draw=none] {15}       
+      }
+      edge from parent node [draw=none,right] {false}
+    };
+\end{tikzpicture}}
+\only<2-2>{$\Rightarrow [20,25,10,15]$}
+  \end{center}
+\end{frame}
+\begin{frame}
+  \frametitle{Go back}
+  \hyperlink{choice}{\beamergotobutton{Go back}}
+\end{frame}
+\end{document}

@@ -1,0 +1,36 @@
+\section{Row polymorphism}
+% \begin{frame}[fragile]
+%   \frametitle{Row polymorphism in two slides}
+%   Row polymorphism is a typing discipline for records.
+%   \begin{block}{Motivation for row polymorphism}
+%     Consider monomorphic records in OCaml:
+% \lstset{style=spacey}
+% \begin{lstlisting}[basicstyle={\ttfamily\footnotesize}]
+% type client = {name: string; id: int}
+% type agent  = {name: string; age: int}
+
+% let bob  = {name="Bob"; id=1}
+% let alice= {name="Alice"; age=42} 
+
+% let print_name r = print ("Name: " ^ r.name ^ "\n")
+
+% let () = print_name bob; print_name alice
+% \end{lstlisting}
+
+% Produces the following error message:
+% \begin{verbatim}
+% print_name bob;
+% ^^^^
+% Error: This expression has type client
+% but an expression was expected of type agent
+% }
+% \end{verbatim}
+% \end{block}
+% \end{frame}
+
+\begin{frame}
+  \frametitle{Rho, rho, rho my row}
+  \begin{itemize}
+    \item Row polymorphism is a typing discipline for records.
+  \end{itemize}
+\end{frame}
