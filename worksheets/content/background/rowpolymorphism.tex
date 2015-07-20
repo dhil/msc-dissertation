@@ -1,0 +1,35 @@
+\section{Row polymorphism}
+Records are unordered collections of fields, e.g. $\record{l_1:t_1,\dots,l_n : t_n}$ denotes a record type with $n$ fields where $l_i$ and $t_i$ denote the name and type, respectively, of the $i$th field.
+Records are particularly great for structuring related data.
+For example the record instance $\record{name="Daniel", age=25}$ could act as simple description of a person.
+A possible type for the record would be $\record{name : \typename{string}, age : \typename{int}}$.
+The implicit ordering of fields in records is not important as the following two types are considered equivalent:
+\[ \record{name : \typename{string}, age : \typename{int}} \equiv \record{age : \typename{int}, name : \typename{string}}. \]
+The equivalence captures what is meant by \emph{unordered} collection of fields.
+
+We can define functions that work on records, for example, occasionally we might find it useful to retrieve the name field in an instance of the person-record:
+\[ \text{name}_1 = \lambda x . (x.name). \]
+We can apply $\text{name}_1$ to the above record instance, e.g. 
+\[ \text{name}_1(\record{name="Daniel", age=25}) = "Daniel" \] 
+yields the expected value.
+The question remains which type the function $\text{name}_1$ has.
+For this particular example the type $\record{name : \typename{string}} \to \typename{string}$ seems reasonable.
+
+Now, consider the following function takes a record and returns a pair where the first component contains the value of the name field and the second component contains the input record itself:
+\[ \text{name}_2 = \lambda x . (x.name, x) \]
+Again, we ask ourselves what is the type of $\text{name}_2$?
+The function must have type $\record{name : \typename{string}} \to \typename{string} \times \record{name : \typename{string}}$.
+This type appears innocuous, but consider the consequence of
+\[ \text{let }(n, r) = \text{name}_2(\record{name="Daniel", age=25}). \]
+Now, $n$ has type $\typename{string}$ as desired, but $r$ has type \record{name : \typename{string}}.
+In other words, we have lost the field ``age''.
+This example is a particular instance of the \emph{loss of information} problem.
+
+Row polymorphism was conceived to address this problem. 
+Row polymorphism is powerful a typing discipline for typing records \cite{Remy1993}.
+The principal idea is to extend record types with a \emph{polymorphic row variable}, $\rho$, which can be instantiated with additional fields.
+For example with row polymorphism our function $\text{name}_2$ would have type $\record{name : \typename{string} \; | \; \rho }$, and $r$ in the previous example would be assigned the type $\record{name : \typename{string}, age : \typename{int} \; | \; \rho }$.
+Now, we have no longer lose information.
+
+\subsection{Type theoretic row polymorphism}
+\subsection{Row polymorphism is not subtyping}
