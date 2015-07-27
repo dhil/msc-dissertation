@@ -78,3 +78,4 @@ acs-*.bib
 # Emacs
 auto
 *~
+*.make.temp
