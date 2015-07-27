@@ -1,0 +1,81 @@
+\@writefile{lof}{\boolfalse {citerequest}\boolfalse {citetracker}\boolfalse {pagetracker}\boolfalse {backtracker}\relax }
+\@writefile{lof}{\defcounter {refsection}{0}\relax }\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lof}{\defcounter {refsection}{0}\relax }\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lof}{\defcounter {refsection}{0}\relax }\@writefile{lof}{\select@language{british}}
+\@writefile{lot}{\boolfalse {citerequest}\boolfalse {citetracker}\boolfalse {pagetracker}\boolfalse {backtracker}\relax }
+\@writefile{lot}{\defcounter {refsection}{0}\relax }\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{lot}{\defcounter {refsection}{0}\relax }\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{lot}{\defcounter {refsection}{0}\relax }\@writefile{lot}{\select@language{british}}
+\@writefile{toc}{\boolfalse {citerequest}\boolfalse {citetracker}\boolfalse {pagetracker}\boolfalse {backtracker}\relax }
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {chapter}{Bibliography}{14}{chapter*.8}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {chapter}{\numberline {1}Introduction}{3}{chapter.1}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {chapter}{\numberline {2}Background}{12}{chapter.2}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {section}{\numberline {1.1}Problem analysis}{3}{section.1.1}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {section}{\numberline {1.2}Problem statement}{8}{section.1.2}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {section}{\numberline {1.3}Related work}{9}{section.1.3}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {section}{\numberline {1.4}Proposed solution}{11}{section.1.4}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {section}{\numberline {2.1}Row polymorphism}{12}{section.2.1}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {1.1.1}The problem with monads}{4}{subsection.1.1.1}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {1.1.2}Composing monads with Monad Transformers}{5}{subsection.1.1.2}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.1}The Eff language}{9}{subsection.1.3.1}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.2}Haskell libraries}{9}{subsection.1.3.2}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.3}Frank}{10}{subsection.1.3.3}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.4}Idris' Effects}{10}{subsection.1.3.4}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.5}Koka with row polymorphic effects}{10}{subsection.1.3.5}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {1.4.1}Objectives, aim and scope}{11}{subsection.1.4.1}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {1.4.2}Contributions}{11}{subsection.1.4.2}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.1}Type theoretic row polymorphism}{13}{subsection.2.1.1}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.2}Row polymorphism is not subtyping}{13}{subsection.2.1.2}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsubsection}{Data types \IeC {\'a} la carte}{9}{section*.4}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsubsection}{Effect granularity}{5}{section*.2}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsubsection}{Extensible effects}{9}{section*.5}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsubsection}{Handlers in action}{9}{section*.6}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsubsection}{Handlers in scope}{10}{section*.7}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\contentsline {subsubsection}{The ordering implies the semantics}{7}{section*.3}}
+\@writefile{toc}{\defcounter {refsection}{0}\relax }\@writefile{toc}{\select@language{british}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\bibdata{worksheets-blx,references}
+\bibstyle{biblatex}
+\citation{Bauer2015}
+\citation{Brady2013}
+\citation{Brady2013}
+\citation{Kammar2013}
+\citation{Kammar2013}
+\citation{Kammar2013}
+\citation{Kammar2013}
+\citation{Kammar2013}
+\citation{Kammar2013}
+\citation{Kiselyov2013}
+\citation{Kiselyov2013}
+\citation{Leijen2014}
+\citation{McBride2014}
+\citation{O'Sullivan2008}
+\citation{O'Sullivan2008}
+\citation{Plotkin2013}
+\citation{Remy1993}
+\citation{Swierstra2008}
+\citation{Swierstra2008}
+\citation{Vazou2015}
+\citation{Venners03}
+\citation{Wu2014}
+\citation{Wu2014}
+\citation{Wu2014}
+\citation{Wu2014}
+\citation{biblatex-control}
+\fi}
+\fi}
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\global\let\hyper@last\relax 
+\global\let\oldcontentsline\contentsline
+\global\let\oldnewlabel\newlabel
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\providecommand\hyper@newdestlabel[2]{}
+\select@language{british}
