@@ -39,6 +39,7 @@ sorting=ynt
   belowcaptionskip=-1\baselineskip,
   xleftmargin=\parindent
 }
+% Haskell style
 \lstdefinestyle{haskell}{
   language=Haskell,
   literate= {+}{{$+$}}1 {*}{{$*$}}1
@@ -46,6 +47,22 @@ sorting=ynt
             {==}{{$\equiv$}}1 {=>}{{$\Rightarrow$}}1
             {->}{{$\to$}}1 {<-}{{$\leftarrow$}}1
             {.}{{$\circ$}}1 {$$}{{\$}}1
+}
+% Ocaml style
+\lstdefinestyle{ocaml}{
+  language=Caml,
+  literate= {+}{{$+$}}1 {*}{{$*$}}1
+            {<=}{{$\leq$}}1 {>=}{{$\geq$}}1 {<>}{{$\neq$}}1 
+            {==}{{$\equiv$}}1 {=>}{{$\Rightarrow$}}1
+            {->}{{$\to$}}1
+}
+% Links style
+\lstdefinestyle{links}{
+  language=Caml,
+  literate= {+}{{$+$}}1 {*}{{$*$}}1
+            {<=}{{$\leq$}}1 {>=}{{$\geq$}}1 
+            {=>}{{$\Rightarrow$}}1
+            {->}{{$\to$}}1 {~>}{{$\rightsquigarrow$}}1
 }
 
 % Example environment
