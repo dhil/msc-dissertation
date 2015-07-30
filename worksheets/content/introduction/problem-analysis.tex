@@ -7,7 +7,7 @@ Other languages disclose effects, albeit with varying degree. For example the Ja
 
 The Haskell programming language is also explicit about effects, but, in contrast to Java, it offers no escape hatch to be implicit. Haskell insists that every effectful computation is encapsulated inside an appropriate monad. In Haskell the file reading function would be typed as \code{readFile :: String -> IO [String]}, where the \code{IO}-annotation signifies that the function might perform an input/output side-effect. A consequence of enforcing effectful computations to be wrapped inside a monad is that the function signature conveys additional information about the computation which the programmer and compiler can rely on. 
 
-\subsection{The problem with monads}
+\subsection{The problem with monads}\label{sec:problem-with-monads}
 % Possibly reformulate this paragraph as it's copied from my IRP
 Monads provide a remarkably powerful way for structuring computations, because they integrate effectful and pure computations in an elegant and flexible manner.
 Sadly, monads do not compose well \cite{Kammar2013}, and accordingly it is difficult to give a monadic description of computations that might perform multiple effects.

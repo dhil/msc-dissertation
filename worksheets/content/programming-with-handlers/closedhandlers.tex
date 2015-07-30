@@ -1,0 +1,130 @@
+\section{Closed handlers}\label{sec:closedhandlers}
+A closed handler handles a fixed set of effects, that is, it effectively describes an upper bound on which kind of effects a computation may perform. In Links this bound is made explicit in the handler's type, e.g. the closed handler \code{h}
+\begin{lstlisting}[style=links]
+var h = handler(m) {
+  case Op(p,_)   -> p
+  case Return(x) -> x
+}
+\end{lstlisting}
+has the type $\chntype{\thunktype{Op : a \to a}{a}}{a}$ where the absence of a row variable in the effect signature implies that the computation \code{m} may not perform any other effects than \type{Op}. It is considered a type error to handle a computation whose effect signature is larger than the handler supports. 
+
+This restriction introduces slack into the type system. To illustrate the slack consider the following computation
+\begin{lstlisting}[style=links]
+fun comp() {
+  do Op(true);
+  if (false == true) {
+    do Op2(false)
+  } else { 
+    true
+  }
+}
+\end{lstlisting}
+The computation \code{comp} has type $\thunktype{Op:\type{Bool} \to (),Op2:\type{Bool} \to \type{Bool} \; | \; \rho}{\type{Bool}}$. Obviously, \code{Op2} never gets discharged. However, attempting to handle \code{comp} with the handler \code{h} yields a type error because \code{Op2} is present in the effect signature of \code{comp}. The type system is conservative, but in general it is undecidable whether the first or second branch of a conditional expression will be taken \cite{Huttel2010}.
+
+The following sections will show increasingly interesting examples of programming with closed handlers in Links.
+
+\subsection{Transforming the results of computations}\label{sec:transform}
+Handlers take computations as input. From a handler's perspective a computation is a \emph{thunk}, i.e. a parameterless function whose type is similar to $\thunktype{Op_i:a_i \to b_i}{c}$. The first few examples show how to transform the output of a computation using handlers. We begin with a handler that appears to be rather boring, but in fact proves very useful as we shall see later in Section \ref{sec:openhandlers}.
+\begin{example}[The force handler]\label{ex:force}
+We dub the handler \code{force} as it takes a computation (thunk) as input, evaluates it and returns its result. It has type $\code{force} : (() \to a) \to a$ and it is defined as
+\begin{lstlisting}[style=links]
+var force = handler(m) {
+    case Return(x) -> x
+}
+\end{lstlisting}
+Essentially, this handler applies the identity transformation to the result of the computation \code{m}. Running \code{force} on a few examples should yield no surprises:
+\begin{lstlisting}[style=links]
+fun fortytwo() { 42 }
+links> force(fortytwo);
+42 : Int
+
+fun hello() { "Hello" }
+links> force(hello);
+"Hello" : String
+\end{lstlisting}
+The handler \code{force} behaves as expected for these trivial examples. But suppose we want to print ``\emph{Hello World}'' to the standard output, e.g.
+\begin{lstlisting}
+fun print_hello() { print("Hello World") }
+links> force(print_hello);
+Type error: §*\dots*§ # Omitted for brevity
+\end{lstlisting}
+then the Links compiler contemptuously halts with a type error! The type of \code{print\_hello} is $() \rightsquigarrow ()$ which at first glance may appear to be compatible with the type of formal parameter \code{m}. But printing to standard output is effectful action, as indicated by the squiggly arrow in the signature, hence \code{print\_hello} is an effectful computation. Since \code{force} does not handle any effects we get the type error. 
+\end{example}
+As Example \ref{ex:force} demonstrated the handler \code{force} could not handle the print effect caused by \code{print\_hello}. In fact no handler in Links is able to handle \code{print\_hello} because the print effect is a syntactic, built-in effect known as \emph{wild}. Handlers only handles user-defined effects.
+
+The next example demonstrates an actual transformation.
+\begin{example}[The listify handler]\label{ex:listify}
+The \code{listify} handler transforms the result of a handled computation into a singleton list. Its type is $\code{listify} : (() \to a) \to [a]$ and its definition is straightforward
+\begin{lstlisting}[style=links]
+var listify = handler(m) {
+  case Return(x) -> [x]
+}
+\end{lstlisting}
+When handling the computations from Example \ref{ex:force} we see that it behaves as expected, e.g.
+\begin{lstlisting}[style=links]
+links> listify(fortytwo);
+[42] : [Int]
+
+links> listify(hello);
+["Hello"] : [String]
+
+fun list123() { [1,2,3] }
+links> listify(list123);
+[[1,2,3]] : [[Int]]
+\end{lstlisting}
+These examples also illustrate the \code{Return}-case serves a similar purpose to the monadic \code{return}-function in Haskell whose type is $\code{return} : a \to m\, a$ for a monad $m$. It ``lifts'' the result into an adequate type.
+\end{example}
+
+In a similar fashion to the handler \code{listify} in Example \ref{ex:listify} we can define handlers that increment results by 1, perform a complex calculation using the result of the computation or wholly ignore the result. The bottom line is that it must ensure its output has an adequate type. In the case for \code{listify} the type must be a list of whatever type the computation yielded.
+
+\subsection{Exception handling}\label{sec:maybehandler}
+Until now we have only seen some simple transformations. Let us spice things up a bit. 
+Example \ref{ex:maybe} introduces the practical handler \code{maybe}. It is similar to the \type{Maybe}-monad in Haskell. For reference we briefly sketched the behaviour of the \type{Maybe}-monad in Section \ref{sec:problem-with-monads}.
+\begin{example}[The maybe handler]\label{ex:maybe}
+The \type{maybe} handler handles one operation $\type{Fail} : a \to a$ that can be used to indicate that something unexpected has happened in a computation. The handler returns \type{Nothing} when \type{Fail} is raised, and \type{Just} the result when the computation succeeds, thus its type is
+\[ \code{maybe} : \chntype{\thunktype{\type{Fail} : a \to a}{b}}{[|\type{Just}:b|\type{Nothing}|\rho|]}. \]
+It is defined as
+\begin{lstlisting}[style=links]
+var maybe = handler(m) {
+  case Fail(_,_) -> Nothing
+  case Return(x) -> Just(x)
+}
+\end{lstlisting}
+When a computation raises \type{Fail} the handler discards the remainder of the computation and returns \type{Nothing} immediately, e.g.
+\begin{lstlisting}[style=links]
+fun yikes() { 
+  var x = "Yikes!";
+  do Fail();
+  x
+}
+links> maybe(yikes);
+Nothing() : [|Just:String|Nothing|§*$\rho$*§|]
+\end{lstlisting}
+and if the computation succeeds it transforms the result, e.g.
+\begin{lstlisting}[style=links]
+fun success() {
+  true
+}
+links> maybe(success);
+Just(true) : [|Just:Bool|Nothing|§*$\rho$*§|]
+\end{lstlisting}
+\end{example}
+The next example demonstrates an alternative ``exception handling strategy''.
+\begin{example}[The recover handler]\label{ex:recover}
+We can define a handler \code{recover} which ignores the raised exception and resumes execution of the computation.
+The type of \code{recover} is
+\[ \code{recover} : \chntype{\thunktype{\type{Fail}: a \to ()}{b}}{[|\type{Just}:b|\rho|]}. \]
+A slight reminder here: The label \type{Nothing} is absent from the handler's output type because \type{Just} is a polymorphic variant label and its relation to \type{Nothing} is conventional. We define \code{recover} as
+\begin{lstlisting}[style=links]
+var recover = handler(m) {
+  case Fail(_,k) -> k(())
+  case Return(x) -> Just(x)
+}
+\end{lstlisting}
+In contrast to \code{maybe} from Example \ref{ex:maybe} the \code{recover} handler invokes the continuation \code{k} once. This invocation effectively resumes execution of the computation. Consider \code{recover} applied to the computation \code{yikes} from before
+\begin{lstlisting}[style=links]
+links> recover(yikes)
+Just("Yikes!") : [|Just:String|§*$\rho$*§|]
+\end{lstlisting}
+\end{example}
+Although it is seldom a sound strategy to ignore exceptions the two Examples \ref{ex:maybe} and \ref{ex:recover} demonstrate that we can change the semantics of the computation by changing the handler.
