@@ -128,3 +128,198 @@ Just("Yikes!") : [|Just:String|§*$\rho$*§|]
 \end{lstlisting}
 \end{example}
 Although it is seldom a sound strategy to ignore exceptions the two Examples \ref{ex:maybe} and \ref{ex:recover} demonstrate that we can change the semantics of the computation by changing the handler.
+
+\subsection{Interpreting Nim}
+Nim is a well-studied mathematical strategic game, and probably among the oldest of its kind \cite{Joergensen2009}. In Nim two players take turns to pick between one and three sticks from heaps of sticks. Whoever takes the last stick wins. This play style is also known as \emph{normal play}. 
+
+Nim enjoys many interesting game theoretic properties, however we will use a simplified version of Nim to demonstrate how handlers can give different interpretations of the same game. In our simplified version there is only one heap of $n$ sticks. Moreover, there are two players: Alice and Bob, and Alice always starts. Our model is adapted from Kammar et. al \cite{Kammar2013}.
+
+We model the game as two mutual recursive abstract computations, e.g.
+\begin{lstlisting}[style=links]
+# Input n is the number of remaining sticks
+fun aliceTurn(n) {
+  if (n == 0) {
+    Bob
+  } else {
+    var take = do Move((Alice,n));
+    var r = n - take;
+    bobTurn(r)
+  }
+}
+
+# Symmetrically for Bob
+fun bobTurn(n) {
+  if (n == 0) {
+    Alice
+  } else {
+    var take = do Move((Bob,n));
+    var r = n - take;
+    aliceTurn(r)
+  }
+}
+\end{lstlisting}
+The two computations are symmetrical. The input parameter \code{n} is the number of sticks left in the heap. First, Alice tests whether there are any sticks left, if there is not then she declares \type{Bob} the winner, otherwise she performs her move and then she gives the turn to Bob.
+The game has one abstract operation \code{Move} which has the inferred type $\code{Move} : ([|\type{Alice}|\type{Bob}|\rho|], \type{Int}) \to \type{Int}$, i.e. it takes two arguments
+\begin{enumerate}
+  \item Who's turn it is,
+  \item and the number of remaining sticks.
+\end{enumerate}
+The operation \code{Move} returns the number of sticks that the current player takes. Figure \ref{fig:nim-comp-tree} depicts the shape of the computation tree representation of the game.
+\begin{figure}[H]
+  \begin{center}
+  Tree
+  \end{center}
+  \caption{Nim game computation tree}\label{fig:nim-comp-tree}
+\end{figure}
+The depth of the tree is potentially infinite as the depth depends entirely on the interpretation of the operation \code{Move}. The inferred type of a game is
+\[ \code{aliceTurn}: \type{Int} \xrightarrow{\type{Move}:([|\type{Alice}|\type{Bob}|\rho|],\type{Int}) \to \type{Int}\;} [|\type{Alice}|\type{Bob}|\rho|] \]
+Because it is an unary function it cannot be used as an input to any handler. We rectify the problem by using a closure, i.e. we wrap the game function inside a nullary function like \code{fun()$\{$aliceTurn(n)$\}$} where \code{n} is a free variable captured by the surrounding context.
+For conveniency, we define an auxiliary function \code{play} to abstract away these details. It takes as input a game handler \code{gh} and the number of sticks at the beginning of game \code{n}. Moreover, the function \code{play} enforces the rule that Alice always starts, e.g.
+\begin{lstlisting}[style=links]
+fun play(gh, n) {
+  gh(fun() {
+      aliceTurn(n)
+    })
+}
+\end{lstlisting}
+The following examples demonstrates how handlers encode the strategic behaviour of the players.
+\begin{example}[A naïve strategy]\label{ex:nim-naive}
+A very naïve strategy is to pick just \emph{one} stick at every turn.
+Its implementation is straightforward
+\begin{lstlisting}[style=links]
+var naive = handler(m) {
+  case Move(_,k) -> k(1)
+  case Return(x) -> x
+};
+\end{lstlisting}
+Here \code{Move} is handled uniformly. Independent of the parameterisation it always invokes the continuation \code{k} with 1 which corresponds to the player taking just 1 stick from the heap.
+
+A moment's thought will tell us that we can easily predict the winner when using the \code{naive} strategy. The parity of $n$, the number of sticks at the beginning, determines the winner. For odd $n$ Alice wins and vice versa for even $n$, e.g.
+\begin{lstlisting}
+links> play(naive, 5);
+Alice() : [|Alice|Bob|§*$\rho$*§|]
+
+links> play(naive, 10);
+Bob() : [|Alice|Bob|§*$\rho$*§|]
+
+links> play(naive, 101);
+Alice() : [|Alice|Bob|§*$\rho$*§|]
+\end{lstlisting} 
+\end{example}
+
+\begin{example}[Perfect vs perfect strategy]\label{ex:nim-perfect}
+A perfect strategy makes an optimal move at each turn. An optimal move depends on the remaining number of sticks $n$. The perfect move can be defined as a function of $n$, e.g.
+\[ \text{perfect}(n) = \max\{n\; \text{mod}\; 4, 1\} \]
+In our restricted Nim game a perfect strategy is a winning strategy for Alice if and only if the number of remaining sticks is \emph{not} divisible by 4.
+
+We implement the function \code{perfect} above with an addition: We pass it a continuation as second parameter
+\begin{lstlisting}[style=links]
+fun perfect(n, k) {
+  k(max(mod(n,4),1))
+}
+\end{lstlisting}
+The continuation is invoked with the optimal move. Now we can easily give a handler that assigns perfect strategies to both Alice and Bob, e.g.
+\begin{lstlisting}[style=links]
+var pvp = handler(m) {
+  case Move((_,n),k) -> perfect(n, k)
+  case Return(x)     -> x
+};
+\end{lstlisting}
+By running some examples we see that Alice wins whenever $n$ is not divisible by four:
+\begin{lstlisting}[style=links]
+links> play(pvp, 9);
+Alice() : [|Alice|Bob|§*$\rho$*§|]
+
+links> play(pvp, 18);
+Alice() : [|Alice|Bob|§*$\rho$*§|]
+
+links> play(pvp, 36);
+Bob() : [|Alice|Bob|§*$\rho$*§|]
+\end{lstlisting}
+\end{example}
+
+\begin{example}[Mixing strategies]\label{ex:nim-mixing}
+A strategy often encountered in game theory is \emph{mixing} which implies a player randomises its strategies in order to confuse its opponent. In similar fashion to \code{perfect} from Example \ref{ex:nim-perfect} we define a function \code{mix} which chooses a strategy
+\begin{lstlisting}[style=links]
+fun mix(n,k) {
+  var r = mod(nextInt(), 3) + 1;
+  if (r > 1 && n >= r)) {
+     k(r)
+  } else {
+     k(1)
+  }
+}
+\end{lstlisting}
+The function \code{nextInt} returns the next integer in some random sequence. The random integer is projected into the cyclic group $\mathbb{Z}_3 = \{0,1,2\}$ generated by $3$. We add one to map it onto the set of valid moves $\{1,2,3\}$. If the random choice \code{r} is greater than the number of remaining sticks \code{n} then we default to take one (even though the optimal choice might be to take two).
+
+The \code{mixing} strategy handler is similar to perfect-vs-perfect handler from Example \ref{ex:nim-perfect}
+\begin{lstlisting}[style=links]
+var mixing = handler(m) {
+    case Move((_,n),k) -> mix(n,k)
+    case Return(x)     -> x			  
+};
+\end{lstlisting}
+Replaying the same game a few times ought eventually yield the two possible outcomes
+\begin{lstlisting}
+links> play(mixing, 7);
+Bob() : [|Alice|Bob|§*$\rho$*§|]
+
+links> play(mixing, 7);
+Alice() : [|Alice|Bob|§*$\rho$*§|]
+\end{lstlisting}
+\end{example}
+
+\begin{example}[Brute force strategy]\label{ex:nim-brute-force}
+Examples \ref{ex:nim-naive}, \ref{ex:nim-perfect} and \ref{ex:nim-mixing} only invoked the continuation once per move. However, we can invoke the continuation multiple times to enumerate all possible future moves, this way we can brute force a winning strategy, if one exists. In order to brute force a winning strategy, we define a convenient utility function which computes the set of valid moves given the number of remaining sticks
+\begin{lstlisting}[style=links]
+fun validMoves(n) {
+ filter(fun(m) { m <= n }, [1,2,3])
+}
+\end{lstlisting}
+The function simply filters out impossible moves based on the current configuration $n$. Note when $n > 3$ the function \code{validMoves} behaves like the identity function.
+The function \code{bruteForce} computes the winning strategy for a particular player if such a strategy exists:
+\begin{lstlisting}[style=links]
+fun bruteForce(player, n, k) {
+  var winners = map(k, validMoves(n));
+  var hasPlayerWon = indexOf(player, winners);
+  switch (hasPlayerWon) {
+     case Nothing -> k(1)
+     case Just(i) -> k(i+1)
+  }
+}
+\end{lstlisting}
+The first line inside \code{bruteForce} is the critical point. Here we map the continuation \code{k} over the possible valid moves in the current game configuration. Thus the function effectively simulates all possible future configurations yielding a list of possible winners. The auxiliary function \code{indexOf} looks up the position of \code{player} in the list of winners. The position plus one corresponds to the winning strategy because lists indexes are zero-based. If the player has a winning strategy then the (zero-based) position is returned inside a \type{Just}, otherwise \code{Nothing} is returned.
+
+Let Alice play the brute force strategy and let Bob play the perfect strategy which is captured by the strategy handler \code{bfvp}
+\begin{lstlisting}[style=links]
+var bfvp = handler(m) {
+  case Move((Alice,n),k) -> bruteForce(Alice,n,k)
+  case Move((Bob,n),k)   -> perfect(n,k)
+  case Return(x)         -> x
+};
+\end{lstlisting}
+Here we use deep pattern-matching to distinguish between when \type{Alice} and \type{Bob}'s moves. Obviously, the brute force strategy is inefficient as it redoes a lot of work for each move. The winning strategy that it discovers is exactly same as the perfect strategy. Albeit, \code{bruteForce} computes it in exponential time whilst \code{perfect} computes it in constant time. The following outcomes witness that \code{bruteForce} and \code{perfect} behaves identically
+\begin{lstlisting}[style=links]
+links> play(bfvp, 9);
+Alice() : [|Alice|Bob|§*$\rho$*§|]
+
+links> play(bfvp, 18);
+Alice() : [|Alice|Bob|§*$\rho$*§|]
+
+links> play(bfvp, 36);
+Bob() : [|Alice|Bob|§*$\rho$*§|]
+\end{lstlisting}
+\end{example}
+Although, the \code{bruteForce} strategy is significantly slower than \code{perfect} strategy in Example \ref{ex:nim-brute-force} the point of interest here is not efficiency but rather modularity. As Example \ref{ex:nim-brute-force} nicely demonstrates we can swap two observably equivalent handlers effortlessly. Clearly, this has practical applications for example one would be able to quickly create a prototypical system with slow but easy to implement components. Then later as the system scales one can change the slow components for a faster ones effortlessly.
+
+Examples \ref{ex:nim-naive}, \ref{ex:nim-perfect}, \ref{ex:nim-mixing} and \ref{ex:nim-brute-force} gave different interpretations of the same game. Furthermore, the all computed the same thing, namely, the winner. We can use handlers to create data from computations. For example we can construct the game tree in a Nim game as Example \ref{ex:nim-game-tree} shows. 
+
+\begin{example}[Game tree generator]\label{ex:nim-game-tree}
+Figure \ref{fig:ex-nim-game-tree} depicts the game tree generated by the handler.
+\begin{figure}[H]
+\begin{center}
+Tree
+\end{center}
+\caption{Pretty print of the game tree generated by \code{play(mtGen, 3)}.}\label{fig:ex-nim-game-tree}
+\end{figure}
+\end{example}
