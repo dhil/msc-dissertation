@@ -1,0 +1,110 @@
+%% Packages initialisation
+\documentclass[10pt,compress]{beamer}
+\usepackage[utf8]{inputenc}               % Enable UTF-8 compatible typing
+\usepackage{hyperref}                     % Interactive PDF
+\usepackage{mathtools}                    % Displaying math formulas etc.
+\usepackage{tikz}                         % Drawing
+\usetikzlibrary{trees}
+\usetikzlibrary{calc}
+\usepackage{listings}                     % Source code listings
+
+%\useinnertheme{rectangles}
+\mode<beamer>{\setbeamertemplate{blocks}[rounded][shadow=false]}
+%\setbeamercolor{block title}{bg=blue!10,fg=black}
+%\makeatletter
+%\pgfdeclareverticalshading[lower.bg,upper.bg]{bmb@transition}{200cm}{%
+%  color(0pt)=(upper.bg); color(2pt)=(upper.bg); color(4pt)=(upper.bg)}
+%\makeatother
+
+%% Enable slide numbering
+\makeatletter
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.3\paperwidth,ht=2.25ex,dp=1ex,left]{author in head/foot}%
+    \hspace*{2ex}\usebeamerfont{author in head/foot}\insertshortauthor~~\beamer@ifempty{\insertshortinstitute}{}{(\insertshortinstitute)}
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.1\paperwidth,ht=2.25ex,dp=1ex,center]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\insertshortdate{}
+  \end{beamercolorbox}
+  \begin{beamercolorbox}[wd=.1\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\insertframenumber /\inserttotalframenumber\hspace*{2ex}
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+\makeatother
+
+%% Hide navigation buttons
+\beamertemplatenavigationsymbolsempty
+
+%% Small verbatim font size
+\makeatletter
+\def\verbatim{\footnotesize\@verbatim \frenchspacing\@vobeyspaces \@xverbatim}
+\makeatother
+
+%% Configure lstlisting environment
+\lstdefinestyle{compact}{
+    basicstyle=\ttfamily\tiny,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=none,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    escapeinside={(*}{*)}
+}
+
+\lstdefinestyle{spacey}{
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=none,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    escapeinside={(*}{*)}
+}
+
+\lstset{style=compact}
+
+%% "Defined as" macro
+\newcommand\defas{\mathrel{\overset{\makebox[0pt]{\mbox{\normalfont\tiny\sffamily def}}}{=}}}
+
+%% Meta information
+\author[Daniel Hillerström]{Daniel Hillerström\\\footnotesize{\href{mailto:s1467124@sms.ed.ac.uk}{s1467124@sms.ed.ac.uk}}}
+\title[Programming with handlers in Links]{Programming with handlers in Links\footnote{Excerpt from my dissertation ``Handlers for Algebraic Effects in Links''}}
+\subtitle{\textit{A brief introduction @ St. Andrews}}
+\institute[University of Edinburgh]{School of Informatics\\The University of Edinburgh}
+\date{\today}
+
+%% Load slides
+\begin{document}
+% Front slide
+\begin{frame}[plain]
+  \maketitle
+\begin{center}
+Based on work by Plotkin and Pretnar \cite{Plotkin2013} and Kammar et al. \cite{Kammar2013}.
+\end{center}
+\end{frame}
+% Load subsequent slides
+\input{content/index}
+
+% Bibliography
+\bibliographystyle{unsrt}
+\begin{frame}
+  \frametitle{References}
+  \bibliography{references}
+\end{frame}
+\end{document}
