@@ -1,5 +1,76 @@
 \section{Open handlers}
 
-\subsection{Coffee dispenser revisited}
+\subsection{An effectful coffee dispenser in Links}
+In Section \ref{sec:monads} we implemented a basic coffee dispenser model in Haskell using monads (Example \ref{ex:coffee1}). However, it was difficult to extend the model to include more properties like writing to a display and system failures due to monads' lack of compositionality.
 
-\subsection{Nim revisited}
+In contrast (open) handlers enable us implement a modular coffee dispenser model in Links. Example \ref{ex:coffee-links} implements the model and Example \ref{ex:coffee-links2} demonstrates how the modularity and compositionality of handlers lets us change the behaviour of the coffee dispenser without breaking a sweat.
+\begin{example}[Coffee dispenser]\label{ex:coffee-links}
+The coffee dispenser performs two operations directly
+\begin{enumerate}
+  \item \type{Ask}: Retrieves the inventory.
+  \item \type{Tell}: Writes a description of the item to some medium.
+\end{enumerate}
+Indirectly, the coffee dispenser may perform the \type{Fail} operation when it looks up an item. Thus the type of the dispenser is 
+\[ \code{dispenser} : a \xrightarrow{\{\type{Ask}:() \to [(a, b)], \type{Fail}:() \to b,\type{Tell}:b \to c| \rho\}\;} c \]
+We compose the coffee dispenser from the aforementioned operations and the look-up function, e.g.
+\begin{lstlisting}[style=links]
+fun dispenser(n) {
+  var inv = do Ask();
+  var item = lookup(n,inv);
+  do Tell(item)
+}
+\end{lstlisting}
+The monadic coffee dispenser model used three monads: \type{Reader}, \type{Writer} and \type{Maybe} to model the desired behaviour. We will implement three handlers which resemble the monads. First, let us implement \type{Reader}-monad as the handler \code{reader} whose type is 
+\[  (() \xrightarrow{\{\type{Ask}:(a) \to [(\type{Int}, [|\type{Coffee}|\type{Tea}|\rho_1|])] \, | \,\rho_2\}\;} b) -> () \xrightarrow{\{\type{Ask}:\alpha|\rho_2\}\;} b \]
+For simplicity we hard-code the inventory into the handler
+\begin{lstlisting}[style=links]
+open handler reader(m) {
+  case Ask(_,k)  -> k([(1,Coffee),(2,Tea)])
+  case Return(x) -> x
+}
+\end{lstlisting}
+When handling the operation \type{Ask} the handler simply invokes the continuation \code{k} with the inventory as parameter. Like in Example \ref{ex:coffee1} we model the inventory as an association list.
+
+Second, we implement the handler \code{writer} which provide capabilities to write to a medium. We let the medium be a regular string. The handler's type is
+\[  (() \xrightarrow{\{\type{Tell}: [|\type{Coffee}|\type{Tea}|] \to \type{String} \, | \,\rho\}\;} a) -> () \xrightarrow{\{\type{Tell}:\alpha|\rho_2\}\;} a \]
+and its definition is
+\begin{lstlisting}[style=links]
+open handler writer(m) {
+  case Tell(Coffee,k) -> k("Coffee")
+  case Tell(Tea,k)    -> k("Tea")
+  case Return(x)      -> x
+}
+\end{lstlisting}
+Here we use pattern-matching to convert \type{Coffee} and \type{Tea} into their respective string representations.
+
+Finally, we implement the \code{lookup} function which given a key and an association list returns the element associated with the key if the key exists in the list, otherwise it discharges the \type{Fail}-operation to signal failure
+\begin{lstlisting}[style=links]
+fun lookup(n, xs) {
+  switch (xs) {
+    case [] -> do Fail()
+    case ((i, e) :: xs) -> if (n == i) { e }
+                          else { lookup(n, xs) }
+  }
+}
+\end{lstlisting}
+To handle failure we reuse the \type{maybe}-handler from Section \ref{sec:maybehandler} with the slight change that we make it an open handler. Now, we just have to glue all the components together
+\begin{lstlisting}[style=links]
+fun runDispenser(n) {
+  force(maybe(writer(reader(fun() { dispenser(n) }))))
+}
+\end{lstlisting}
+Note, that in this example the order in which we compose handlers is irrelevant.
+Running a few examples we see that it behaves similarly to the monadic version we implemented in Section \ref{sec:monadtransformers}
+\begin{lstlisting}[style=links]
+links> runDispenser(1)
+Just("Coffee") : [|Just:String|Nothing|§*$\rho$*§|]
+
+links> runDispenser(2)
+Just("Tea") : [|Just:String|Nothing|§*$\rho$*§|]
+
+links> runDispenser(3)
+Nothing() : [|Just:String|Nothing|§*$\rho$*§|]
+\end{lstlisting}
+\end{example}
+
+\subsection{Reinterpreting Nim}
