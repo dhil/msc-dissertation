@@ -1,4 +1,22 @@
 \section{Open handlers}
+Open handlers are the dual to closed handlers when we think in terms of bounds on effects. An open handler give a lower bound on the kind of effects it will handle. Through composition of open handlers we can achieve a tighter bound on the handled effects. Consequently, one can delegate responsibility to \emph{specialised} handlers that handle a particular subset of the effects. Unhandled operations are forwarded to subsequent handlers. In other words, an open handler partially interprets an abstract computation and leaves the remainder for other handlers.
+
+In Links the concrete syntax for open handlers is similar to that for closed handlers. To declare an open handler one simply uses the keyword \code{open} in the declaration, e.g.
+\begin{lstlisting}[style=links]
+open handler h(m) {
+  case Op§*$_i$*§(p§*$_i$*§,k§*$_i$*§)  -> body§*$_i$*§
+  case Return(x)  -> body
+}
+\end{lstlisting}
+The inferred type for the open handler \code{h} is more complex than its closed counterpart:
+\[ \code{h} : (() \xrightarrow{ \{ \type{Op}_i: a_i \to b_i \; | \; \rho\}\; } c) \to () \xrightarrow{ \{ \type{Op}_i: \alpha_i \; | \; \rho\}\;} d\]
+Notice that the effect row of the input computation is \emph{polymorphic} as signified by the presence of the row variable $\rho$. Accordingly, the input computation may perform more operations than the handler handles. The output type of an open handler looks very similar to its input type. The input as well as the output is a thunk. Moreover, their effect rows share the same polymorphic row variable $\rho$. But their operation signatures differ. The polymorphic variable $\alpha_i$ denotes that the $i$'th operation may be present or absent from the effect row.
+
+Since the input type and output type of open handlers match we can compose open handlers seamlessly. The order of composition implicitly defines a stack of handlers. For example the composition of three handlers $(h_1 \circ h_2 \circ h_3)(m)$ applied to some computation $m$ defines a stack where $h_3$ is the top-most element. Thus the handler stack is built outside in. The ordering inside the stack determines which handler is invoked when $m$ discharges an operation. First the top-most handler is invoked, and if it cannot handle the discharged operation then the operation is forwarded to the second top-most handler and so forth.
+
+Consequently, the order of composition may affect the semantics, say, $h_1$ and $h_2$ interpret the same operation differently, then, in general, we have $h_1 \circ h_2 \not\equiv h_2 \circ h_1$.
+
+The composition of open handlers is itself an open handler, thus it will return a thunk itself. For example $(h_1 \circ h_2 \circ h_3)(m)$ yield some nullary function $() \to a$ which we must explicitly invoke to obtain the result of the computation $m$. To avoid this extra invocation recall the \code{force} handler from Section \ref{sec:transform}. We can apply the closed handler \code{force} to obtain the result of $m$ directly, e.g. $(\code{force} \circ h_1 \circ h_2 \circ h_3)(m)$ yields a result of type $a$ immediately.
 
 \subsection{An effectful coffee dispenser in Links}
 In Section \ref{sec:monads} we implemented a basic coffee dispenser model in Haskell using monads (Example \ref{ex:coffee1}). However, it was difficult to extend the model to include more properties like writing to a display and system failures due to monads' lack of compositionality.
@@ -21,7 +39,7 @@ fun dispenser(n) {
 }
 \end{lstlisting}
 The monadic coffee dispenser model used three monads: \type{Reader}, \type{Writer} and \type{Maybe} to model the desired behaviour. We will implement three handlers which resemble the monads. First, let us implement \type{Reader}-monad as the handler \code{reader} whose type is 
-\[  (() \xrightarrow{\{\type{Ask}:(a) \to [(\type{Int}, [|\type{Coffee}|\type{Tea}|\rho_1|])] \, | \,\rho_2\}\;} b) -> () \xrightarrow{\{\type{Ask}:\alpha|\rho_2\}\;} b \]
+\[  (() \xrightarrow{\{\type{Ask}:(a) \to [(\type{Int}, [|\type{Coffee}|\type{Tea}|\rho_1|])] \, | \,\rho_2\}\;} b) \to () \xrightarrow{\{\type{Ask}:\alpha|\rho_2\}\;} b \]
 For simplicity we hard-code the inventory into the handler
 \begin{lstlisting}[style=links]
 open handler reader(m) {
@@ -32,7 +50,7 @@ open handler reader(m) {
 When handling the operation \type{Ask} the handler simply invokes the continuation \code{k} with the inventory as parameter. Like in Example \ref{ex:coffee1} we model the inventory as an association list.
 
 Second, we implement the handler \code{writer} which provide capabilities to write to a medium. We let the medium be a regular string. The handler's type is
-\[  (() \xrightarrow{\{\type{Tell}: [|\type{Coffee}|\type{Tea}|] \to \type{String} \, | \,\rho\}\;} a) -> () \xrightarrow{\{\type{Tell}:\alpha|\rho_2\}\;} a \]
+\[  (() \xrightarrow{\{\type{Tell}: [|\type{Coffee}|\type{Tea}|] \to \type{String} \, | \,\rho\}\;} a) \to () \xrightarrow{\{\type{Tell}:\alpha|\rho_2\}\;} a \]
 and its definition is
 \begin{lstlisting}[style=links]
 open handler writer(m) {
@@ -72,5 +90,6 @@ links> runDispenser(3)
 Nothing() : [|Just:String|Nothing|§*$\rho$*§|]
 \end{lstlisting}
 \end{example}
+Notice that we implemented the computation \code{dispenser}
 
 \subsection{Reinterpreting Nim}

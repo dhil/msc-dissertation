@@ -1,7 +1,7 @@
 \section{Closed handlers}\label{sec:closedhandlers}
 A closed handler handles a fixed set of effects, that is, it effectively describes an upper bound on which kind of effects a computation may perform. In Links this bound is made explicit in the handler's type, e.g. the closed handler \code{h}
 \begin{lstlisting}[style=links]
-var h = handler(m) {
+handler h(m) {
   case Op(p,_)   -> p
   case Return(x) -> x
 }
