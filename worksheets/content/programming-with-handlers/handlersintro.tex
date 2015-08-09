@@ -1,1 +1,14 @@
 \chapter{Programming with handlers in Links}\label{ch:programming}
+Through a series of examples we will explore programming with two types of effect handlers in Links. Section \ref{sec:closedhandlers} introduces \emph{closed handlers} and in particular emphasises the high degree of modularity afforded by closed handlers. Section \ref{sec:openhandlers} introduces the slightly more generalised \emph{open handlers} and focuses mainly on the compositionality of (open) handlers.
+
+\section{Discharging operations in Links}\label{sec:discharge}
+Syntactically an operation is similar to variant types in Links. Every operation name starts with a capital letter, e.g. \type{Get}, \type{Put}, etc. Every operation takes an input and yields an output. The output from discharging an operation is entirely decided by effect handlers in the evaluation context. That is, alone an operation does not have any semantics.
+
+Operations are discharged using the \code{do}-primitive. However discharging an operation in an unhandled context yields an evaluation error:
+\begin{lstlisting}[style=links]
+links> do Get();
+*** Error: Unhandled operation: Get()
+\end{lstlisting}
+The typing of operations is uniform because every operation takes exactly one input. Therefore the type of an operation is on the form $a \to b$ where $a$ and $b$ are type variables. In order to simulate multiple parameters one can instantiate $a$ to a record type, e.g. $\code{Put}((\code{true},1))$ is an operation of type $(\type{Bool},\type{Int}) \to b$.
+
+Similarly, one can simulate a nullary operation by passing the empty record, e.g. $\code{Get}()$ has type $() \to b$.

@@ -1,4 +1,4 @@
-\section{Open handlers}
+\section{Open handlers}\label{sec:openhandlers}
 Open handlers are the dual to closed handlers when we think in terms of bounds on effects. An open handler give a lower bound on the kind of effects it will handle. Through composition of open handlers we can achieve a tighter bound on the handled effects. Consequently, one can delegate responsibility to \emph{specialised} handlers that handle a particular subset of the effects. Unhandled operations are forwarded to subsequent handlers. In other words, an open handler partially interprets an abstract computation and leaves the remainder for other handlers.
 
 In Links the concrete syntax for open handlers is similar to that for closed handlers. To declare an open handler one simply uses the keyword \code{open} in the declaration, e.g.
