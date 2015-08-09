@@ -129,7 +129,7 @@ Just("Yikes!") : [|Just:String|§*$\rho$*§|]
 \end{example}
 Although it is seldom a sound strategy to ignore exceptions the two Examples \ref{ex:maybe} and \ref{ex:recover} demonstrate that we can change the semantics of the computation by changing the handler.
 
-\subsection{Interpreting Nim}
+\subsection{Interpreting Nim}\label{sec:interpreting-nim}
 Nim is a well-studied mathematical strategic game, and probably among the oldest of its kind \cite{Joergensen2009}. In Nim two players take turns to pick between one and three sticks from heaps of sticks. Whoever takes the last stick wins. This play style is also known as \emph{normal play}. 
 
 Nim enjoys many interesting game theoretic properties, however we will use a simplified version of Nim to demonstrate how handlers can give different interpretations of the same game. In our simplified version there is only one heap of $n$ sticks. Moreover, there are two players: Alice and Bob, and Alice always starts. Our model is adapted from Kammar et. al \cite{Kammar2013}.
@@ -318,7 +318,7 @@ Examples \ref{ex:nim-naive}-\ref{ex:nim-brute-force} gave different interpretati
 A node in a game tree represents a particular player's turn and an edge corresponds to a particular move. A path down the tree corresponds to a particular sequence of moves taken by the players ending in a leaf node which corresponds to the winner. Figure \ref{fig:ex-nim-game-tree} shows an example game tree when starting with 3 sticks.
 
 Our game tree is a ternary tree which we represent using a recursive variant type, e.g.
-\[ \type{MoveTree} = [|\type{Take}:(\type{Player},[(\type{Int},\type{MoveTree})])\,|\,\type{Winner}:\type{Player}|] \]
+\[ \type{MoveTree} \defas [|\type{Take}:(\type{Player},[(\type{Int},\type{MoveTree})])\,|\,\type{Winner}:\type{Player}|] \]
 Actually, we will not use the type explicitly, but rather rely on Links' type inference. It will infer a polymorphic variant type rather than the monomorphic type given above.
 
 We define a function \code{reifyMove} which takes a player, the number of sticks, and a continuation to construct a node in the game tree, e.g.
