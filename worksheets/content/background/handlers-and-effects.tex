@@ -1,4 +1,4 @@
-\section{Handlers and algebraic effects}
+\section{Handlers and algebraic effects}\label{sec:handlers-and-effects}
 Algebraic effects and handlers have their foundation in category theory \cite{Plotkin2001a,Plotkin2013}. Plotkin and Power \cite{Plotkin2001b,Plotkin2001a} gave a categorical treatment of algebraic effects. The term ``algebraic'' implies that an effect ought to have an equational theory, however we consider only free algebras, that is our theories are equationless. Therefore we will not delve into the theoretical foundations of algebraic effects and handlers, rather we will take a more practical approach. Moreover, we will use the terms algebraic effect and effect interchangeably.
 
 \subsection{Algebraic effect}
@@ -14,7 +14,8 @@ Benton and Kennedy generalised exception handlers \cite{Benton2001} (as known fr
 Intuitively, an effect handler is a generalised function which takes an abstract computation as input, and embodies a collection of cases for pattern matching on operations that may be discharged during the evaluation of the input computation.
 
 \subsection{Interpreting effects as computation trees}
-To further develop intuition about handlers and effects we illustrate a diagrammatic interpretation of effects as computation trees \cite{Lindley2014}. Consider the following expression:
+Abstract computations are syntactic structure without a particular semantics. Handlers assign semantics to abstract computations.
+To further develop intuition about handlers and effects we illustrate a diagrammatic interpretation of effects as computation trees \cite{Lindley2014}. Moreover, we see how we can assign different semantics to the same abstract computation. Consider the following expression:
 \begin{lstlisting}[style=ocaml]
 if Choose() then
   if Choose() then

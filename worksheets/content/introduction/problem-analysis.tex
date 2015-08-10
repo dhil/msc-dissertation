@@ -10,14 +10,17 @@ The Haskell programming language is also explicit about effects, but, in contras
 %However monads are not flawless.
 
 \subsection{Benefits of being explicit about effects}
+An effect conveys additional information about what might happen during evaluation of a computation. This information may be used by an optimising compiler transform the computation into an equivalent, more efficient computation. For example, fine-grained effects can tell us precisely when it is safe to reuse a particular piece of code \cite{Kammar2012}. Moreover, the additional information can aid in verification of the code up-front \cite{Brady2013}.
 
-\subsection{The problem with monads}\label{sec:problem-with-monads}
-% Possibly reformulate this paragraph as it's copied from my IRP
-Monads provide a remarkably powerful way for structuring computations, because they integrate effectful and pure computations in an elegant and flexible manner.
-Sadly, monads do not compose well \cite{Kammar2013}, and accordingly it is difficult to give a monadic description of computations that might perform multiple effects.
-% End of IRP phrase
+Finally, explicit effects provide additional documentation to the programmer about the code. As a result thereof the programmer gain better insight into what the computation actually \emph{does} without breaking the abstraction.
+
+\subsection{A monadic effectful coffee dispenser}\label{sec:problem-with-monads}
+Monads are powerful abstractions for structuring computations as long as we are working inside the same monad. 
+Because, sadly, monads are do not compose well \cite{Kammar2013}, and consequently it is difficult to give a monadic description of computations that might perform multiple effects.
 Consider the following attempt at modelling a coffee dispenser in Haskell:
 \begin{example}[Coffee dispenser using monads]\label{ex:coffee1}
+The coffee dispenser is effectful, that is, it reacts to user input and may fail. Furthermore, we want to be explicit about the effects that the dispenser may cause. 
+
 First we define the sum type \type{Dispensable} which has two labels: \type{Coffee} and \type{Tea}. They represent the two items that the coffee machine can dispense.
 \begin{lstlisting}[style={haskell}]
 data Dispensable = Coffee | Tea deriving Show
@@ -26,14 +29,14 @@ type ItemCode  = Integer
 type Inventory = [(ItemCode,Dispensable)]
 inventory = [(1,Coffee),(2,Tea)]
 \end{lstlisting}
-The \type{ItemCode} type models a button on the coffee machine, and \type{Inventory} associates buttons with dispensable items. The \code{inventory} is fixed, i.e. it will not change during run-time. We can make this explicit by encapsulating the \code{inventory} inside a \type{Reader}-monad, e.g.
+The \type{ItemCode} type models a button on the coffee machine, and \type{Inventory} associates buttons with dispensable items. The \code{inventory} will not change during run-time. We can capture this property in the effect signature by encapsulating the \code{inventory} inside a \type{Reader}-monad. Furthermore, we use the \type{Maybe}-type to capture the possibility of failure, e.g.
 \begin{lstlisting}[style={haskell}]
 dispenser :: ItemCode -> Reader Inventory (Maybe Dispensable)
 dispenser n = do inv <- ask
                  let item = lookup n inv
                  return item
 \end{lstlisting}
-The type \type{Reader Inventory (Maybe Dispensable)} tells us that \code{dispenser} accesses a read-only instance of \type{Inventory} and maybe returns an instance of \type{Dispensable}. The \type{Maybe}-type captures the possibility of failure, e.g. if the user requests an item that is not in the inventory. 
+The type \type{Reader Inventory (Maybe Dispensable)} tells us that \code{dispenser} accesses a read-only instance of \type{Inventory} and maybe returns an instance of \type{Dispensable}. The \type{Maybe}-type tell us that in the event of an error we get \code{Nothing}, for instance if the user requests an item that is not in the inventory, otherwise we get \code{Just} the requested item.
 The monadic operation \code{ask} retrieves the inventory from the \type{Reader}-monad and \code{lookup} checks whether the item \code{n} is in the inventory.  
 
 Although, \code{Maybe} is a monad we cannot use its monadic interface, because we are in the context of the \code{Reader}-monad. For this simple computation it is not an issue, but it would be desirable to be able to use the failure handling capabilities of the \code{Maybe}-monad.
@@ -42,7 +45,7 @@ Imagine that we want log when tea or coffee is being dispensed. The \type{Writer
 \begin{lstlisting}[style={haskell}]
 do inv  <- ask
    item <- lookup n inv
-   tell . show $$ item
+   tell (show item)
    return item
 \end{lstlisting}
 Here the monadic operation \code{tell} writes to the medium contained in the \type{Writer}-monad.
@@ -62,7 +65,7 @@ Essentially, this type tells us that we cannot compose monads of different types
 \subsubsection{Effect granularity}%The IO monad is like a calzone pizza.
 It is possible to solve the problem using regular monads. However, it comes at a cost as suggested by the type signature of the bind operator we can compose one monad with another as long as they got the same monadic type. So, we could just use one monadic type to describe all effects. It is very tempting to bake everything into an \type{IO}-monad as we possibly want to I/O capabilities at some point. Albeit, \type{IO} is a very conservative estimate on which effects our computation might perform. Consequently, we get coarse-grained effect signatures as opposed to more specific, fine-grained effect signatures.
 
-\subsection{Composing monads with Monad Transformers}\label{sec:mt}
+\subsection{A better monadic effectful coffee dispenser}\label{sec:mt}
 % Possibly reformulate this paragraph as it's copied from my IRP
 Monad Transformers allow two monads to be combined by stacking one on top of the other. 
 Furthermore, a Monad Transformer is itself a monad, and thus we can create arbitrarily complex compositions.
@@ -80,7 +83,7 @@ dispenser1
 
 dispenser1 n = do inv  <- lift ask
                   item <- lift . lift $$ lookup n inv
-                  tell . show $$ item
+                  tell (show item)
                   return item
 \end{lstlisting}
 The type may look dubious. Basically, we have built a Monad Transformer stack with three monads:
@@ -123,7 +126,7 @@ permute :: ReaderT e Writer w a -> WriterT w Reader e a
 In this case it is safe because the two monads commute. But in general monads do not commute and therefore the consequence of permuting monads can be severe as we shall see in the next section.
 %However Monad Transformers are no silver bullets as they impose an ordering on effects.
 
-\subsubsection{The ordering implies the semantics}
+\subsubsection{The importance of effect ordering}
 The effect ordering hard wires the semantics and syntactical structure of computations. Consider the following example adapted from O'Sullivan et. al \cite{O'Sullivan2008}:
 \begin{example}[Importance of effect ordering \cite{O'Sullivan2008}]
 We will demonstrate that the \type{Writer} and \type{Maybe} monads do not commute. Let \type{A} be the type 
