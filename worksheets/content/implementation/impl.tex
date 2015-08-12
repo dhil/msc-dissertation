@@ -1,4 +1,118 @@
 \chapter{Implementation}
-\section{Type inference algorithm}
+Figure \ref{fig:compiler-phases} shows how the different phases are connected.
+\begin{figure}[H]
+\begin{center}
+\tikzset{my ellipse/.style={
+        draw=blue, 
+        ultra thick, 
+        rectangle, 
+        anchor=west, 
+        xshift=1.0cm},
+}
+\tikzset{my rectangle/.style={
+        draw=black, 
+        thick, 
+        rectangle, 
+        minimum width={width("Early desugar")+2pt}}
+}
+\tikzset{my arrow/.style={-latex, thick}}
+
+\begin{tikzpicture}  
+  % Frontend
+  \node [my rectangle,draw=black,thick] (Early desugar) at (0,0) {Early desugar};
+  \node [my rectangle,draw=black,thick,above of=Early desugar] (Parser) {Parser};
+  \node [my rectangle,draw=black,thick,below of=Early desugar] (Typechecker) {Type checker};
+  %\node [my rectangle,draw=black,thick,below of=Typechecker] (Late desugar) {Late desugar};
+
+  \node[rectangle,draw=black,ultra thick,minimum height=+5.0cm,minimum width=+4.0cm,fit ={(Parser.north) (Typechecker.south)}] (Frontend) {};
+
+  % Input source
+  \node [rectangle,draw=black,thick,xshift=-3.0cm,left of=Frontend] (Source) {Source};
+
+  % Backend
+  \node [my rectangle,xshift=+4.0cm,draw=black,thick,right of=Parser] (Sugartoir) {IR Compiler};
+  \node [my rectangle,yshift=-0.5cm,draw=black,thick,below of=Sugartoir] (PMC) {\begin{tabular}{l}Pattern\\Matching\\ Compiler\end{tabular}};
+  
+  \node[rectangle,draw=black,ultra thick,minimum width=+4.0cm,minimum height=+5.0cm,fit ={(Sugartoir.north) (PMC.south)}] (Backend) {};
+
+  % Interpreter
+  \node [rectangle,xshift=+3.5cm,draw=black,thick,right of=Backend] (Evalir) {Interpreter};
+
+%  \node [rectangle,ultra thick,draw=black] (Frontend) at (Source.east) {};
+
+  % \node [my rectangle,yshift=+1.5cm] (Parser) at (Source.east) {Parser};
+  % \node [my rectangle,yshift=+0.5cm] (Early desugar) at (Source.east) {Early desugar};
+  % \node [my rectangle,yshift=-0.5cm] (Typecheck) at (Source.east) {Type checking};
+  % \node [my rectangle,yshift=-1.5cm] (Late desugar) at (Source.east) {Late desugar};
+  % %\node [my rectangle] (Frontend) at (Source.east) {Frontend};
+
+  % % Backend
+  % \node [my rectangle,yshift=-1.0cm,xshift=+1.0cm] (Sugartoir) at (Parser.east) {ANF Compiler};
+  % \node [my rectangle,yshift=-2.0cm,xshift=+1.0cm] (PMC) at (Parser.east) {PM Compiler};
+
+  % % Interpreter
+  % \node [my rectangle,yshift=-0.5cm] (Evalir) at (Sugartoir.east) {Eval IR};
+
+  % % Boxes
+  % \node [draw=red, ultra thick, 
+  %           fit={($(Parser.east)-(0.0cm,-0.0cm)$) 
+  %               ([yshift=+0.5cm,xshift=-0.5cm]Parser.west) 
+  %               (Late desugar) 
+  %               ([xshift=+2.0cm]Late desugar.east)}
+  %       ] (Frontend) {};
+
+  % % Texts
+  \node [anchor=north, font=\bfseries,yshift=-0.1cm] at (Frontend.north) {Frontend};
+  \node [anchor=north, font=\bfseries,yshift=-0.1cm] at (Backend.north) {Backend};
+
+  % Arrows
+  \draw [->, ultra thick] (Source.east) -- (Frontend.west) {};
+  \draw [->, ultra thick] (Frontend.east) -- (Backend.west) {};
+  \draw [->, ultra thick] (Backend.east) -- (Evalir.west) {};
+
+  \draw [->, thick] (Parser.south) -- (Early desugar.north) {};
+  \draw [->, thick] (Early desugar.south) -- (Typechecker.north) {};
+
+  \draw [->, thick,out=150, in=20] (Sugartoir.-10.-150) -- (PMC.135.0) {};
+  \draw [->, thick,out=150, in=20] (PMC.43.0) -- (Sugartoir.-19.0) {};
+\end{tikzpicture}
+
+% \begin{tikzpicture} 
+%     \node [my ellipse]                (Int Source)       at (0, 0)                  {Int Source}; 
+%     \node [my ellipse]                (duplicate)        at (Int Source.east)       {duplicate};
+%     \node [my ellipse, yshift=+1.0cm] (High Pass Filter) at (duplicate.east)        {High Pass Filter};
+%     \node [my ellipse, yshift=-1.0cm] (Low Pass Filter)  at (duplicate.east)        {Low Pass Filter};
+%     \node [my ellipse, yshift=-1.0cm] (roundrobin)       at (High Pass Filter.east) {roundrobin(1,1)};
+%     \node [my ellipse]                (IntPrinter)       at (roundrobin.east)       {IntPrinter};
+
+%     \draw [my arrow] (Int Source.east)      -- (duplicate.west);
+%     \draw [my arrow] (duplicate.10)         -- (High Pass Filter.-175);
+%     \draw [my arrow] (duplicate.-10)        -- (Low Pass Filter.175);
+%     \draw [my arrow] (High Pass Filter.-10) -- (roundrobin.175);
+%     \draw [my arrow] (Low Pass Filter.10)   -- (roundrobin.-175);
+%     \draw [my arrow] (roundrobin.east)      -- (IntPrinter.west);
+
+%     \node [draw=red, ultra thick, 
+%             fit={($(duplicate.west)-(0.5cm,0)$) 
+%                 ([yshift=0.40cm]High Pass Filter.north) 
+%                 (Low Pass Filter) 
+%                 ([xshift=0.4cm]roundrobin.east)}
+%         ] (Band Pass Filter) {};
+%     \node [draw=brown, ultra thick, 
+%             fit={(Int Source) 
+%                 ([yshift=0.9cm]High Pass Filter.north) 
+%                 ([yshift=-0.4cm]Low Pass Filter.south) 
+%                 (IntPrinter)}
+%         ] (Pipeline) {};
+
+%     \node [anchor=north, font=\bfseries] at (Band Pass Filter.north) {Band Pass Filter};
+%     \node [anchor=north, font=\bfseries] at (Pipeline.north) {Pipeline};
+
+% \end{tikzpicture}
+\caption{Links compiler phases overview}\label{fig:compiler-phases}
+\end{center}
+\end{figure}
+\section{Early desugaring of handlers}
+\section{Type inference}
+\section{Pattern-matching compilation}
 \section{Interpreter}
-\section{Syntax and semantics}
