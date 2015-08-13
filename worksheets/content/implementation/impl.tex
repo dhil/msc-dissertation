@@ -1,6 +1,20 @@
 \chapter{Implementation}
-Figure \ref{fig:compiler-phases} shows how the different phases are connected.
-\begin{figure}[H]
+The Links compiler is a multi-pass compiler with several distinct phases.
+Coarsely, we can divide the compiler into two major components the front-end and back-end.
+We can further subdivide the front-end into
+\begin{itemize}
+  \item Parser: Transforms the input source into a syntax tree.
+  \item Early desugar: Performs source-to-source transformations before source analysis.
+  \item Type checker: Analyses the source, performs type inference, and ensures terms are well-typed.
+\end{itemize}
+The compiler has more front-end components, but these are the most relevant for our implementation.
+Similarly, the back-end can be further subdivided
+\begin{itemize}
+  \item IR Compiler: Transforms the source into an intermediate representation used by the interpreter.
+  \item Pattern-matching compiler: Aids the IR compiler by compiling pattern-matching constructs into the intermediate representation.
+\end{itemize}
+Figure \ref{fig:compiler-phases} provides a high level picture of how the different relevant phases are connected. The subsequent sections discuss implementation specific details.
+\begin{figure}[t]
 \begin{center}
 \tikzset{my ellipse/.style={
         draw=blue, 
@@ -38,30 +52,7 @@ Figure \ref{fig:compiler-phases} shows how the different phases are connected.
   % Interpreter
   \node [rectangle,xshift=+3.5cm,draw=black,thick,right of=Backend] (Evalir) {Interpreter};
 
-%  \node [rectangle,ultra thick,draw=black] (Frontend) at (Source.east) {};
-
-  % \node [my rectangle,yshift=+1.5cm] (Parser) at (Source.east) {Parser};
-  % \node [my rectangle,yshift=+0.5cm] (Early desugar) at (Source.east) {Early desugar};
-  % \node [my rectangle,yshift=-0.5cm] (Typecheck) at (Source.east) {Type checking};
-  % \node [my rectangle,yshift=-1.5cm] (Late desugar) at (Source.east) {Late desugar};
-  % %\node [my rectangle] (Frontend) at (Source.east) {Frontend};
-
-  % % Backend
-  % \node [my rectangle,yshift=-1.0cm,xshift=+1.0cm] (Sugartoir) at (Parser.east) {ANF Compiler};
-  % \node [my rectangle,yshift=-2.0cm,xshift=+1.0cm] (PMC) at (Parser.east) {PM Compiler};
-
-  % % Interpreter
-  % \node [my rectangle,yshift=-0.5cm] (Evalir) at (Sugartoir.east) {Eval IR};
-
-  % % Boxes
-  % \node [draw=red, ultra thick, 
-  %           fit={($(Parser.east)-(0.0cm,-0.0cm)$) 
-  %               ([yshift=+0.5cm,xshift=-0.5cm]Parser.west) 
-  %               (Late desugar) 
-  %               ([xshift=+2.0cm]Late desugar.east)}
-  %       ] (Frontend) {};
-
-  % % Texts
+  % Texts
   \node [anchor=north, font=\bfseries,yshift=-0.1cm] at (Frontend.north) {Frontend};
   \node [anchor=north, font=\bfseries,yshift=-0.1cm] at (Backend.north) {Backend};
 
@@ -74,45 +65,111 @@ Figure \ref{fig:compiler-phases} shows how the different phases are connected.
   \draw [->, thick] (Early desugar.south) -- (Typechecker.north) {};
 
   \draw [->, thick,out=150, in=20] (Sugartoir.-10.-150) -- (PMC.135.0) {};
-  \draw [->, thick,out=150, in=20] (PMC.43.0) -- (Sugartoir.-19.0) {};
+  \draw [->, thick] (PMC.43.0) -- (Sugartoir.-19.0) {};
 \end{tikzpicture}
-
-% \begin{tikzpicture} 
-%     \node [my ellipse]                (Int Source)       at (0, 0)                  {Int Source}; 
-%     \node [my ellipse]                (duplicate)        at (Int Source.east)       {duplicate};
-%     \node [my ellipse, yshift=+1.0cm] (High Pass Filter) at (duplicate.east)        {High Pass Filter};
-%     \node [my ellipse, yshift=-1.0cm] (Low Pass Filter)  at (duplicate.east)        {Low Pass Filter};
-%     \node [my ellipse, yshift=-1.0cm] (roundrobin)       at (High Pass Filter.east) {roundrobin(1,1)};
-%     \node [my ellipse]                (IntPrinter)       at (roundrobin.east)       {IntPrinter};
-
-%     \draw [my arrow] (Int Source.east)      -- (duplicate.west);
-%     \draw [my arrow] (duplicate.10)         -- (High Pass Filter.-175);
-%     \draw [my arrow] (duplicate.-10)        -- (Low Pass Filter.175);
-%     \draw [my arrow] (High Pass Filter.-10) -- (roundrobin.175);
-%     \draw [my arrow] (Low Pass Filter.10)   -- (roundrobin.-175);
-%     \draw [my arrow] (roundrobin.east)      -- (IntPrinter.west);
-
-%     \node [draw=red, ultra thick, 
-%             fit={($(duplicate.west)-(0.5cm,0)$) 
-%                 ([yshift=0.40cm]High Pass Filter.north) 
-%                 (Low Pass Filter) 
-%                 ([xshift=0.4cm]roundrobin.east)}
-%         ] (Band Pass Filter) {};
-%     \node [draw=brown, ultra thick, 
-%             fit={(Int Source) 
-%                 ([yshift=0.9cm]High Pass Filter.north) 
-%                 ([yshift=-0.4cm]Low Pass Filter.south) 
-%                 (IntPrinter)}
-%         ] (Pipeline) {};
-
-%     \node [anchor=north, font=\bfseries] at (Band Pass Filter.north) {Band Pass Filter};
-%     \node [anchor=north, font=\bfseries] at (Pipeline.north) {Pipeline};
-
-% \end{tikzpicture}
-\caption{Links compiler phases overview}\label{fig:compiler-phases}
+\caption{Links compiler phases overview.}\label{fig:compiler-phases}
 \end{center}
 \end{figure}
+
 \section{Early desugaring of handlers}
+The \code{handler} and \code{open handler} constructs are syntactic sugar. They get desugared into a legacy construct from an early implementation. The initial implementation used a \code{handle}-construct for handlers. Figure \ref{fig:closedhandler-desugar} displays the conceptual transformation of \code{handler} to \code{handle}. 
+This desugaring takes place right after the parsing phase. The early desugaring is beneficial because it allows us to take full advantage of the earlier implementation, whilst providing a more convenient syntax for handlers.
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[c]{0.45\textwidth}
+        \centering
+\begin{lstlisting}[style=links]
+handler(m) {
+  case Op§*$_i$*§(p§*$_i$*§,k§*$_i$*§) -> b§*$_i$*§
+  case Return(x) -> b
+}
+\end{lstlisting}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[c]{0.1\textwidth}
+      $\Rightarrow$
+    \end{subfigure}%
+    ~
+    \begin{subfigure}[c]{0.45\textwidth}
+        \centering
+\begin{lstlisting}[style=links]
+fun(m) {
+  handle(m) {
+    case Op§*$_i$*§(p§*$_i$*§,k§*$_i$*§) -> b§*$_i$*§
+    case Return(x) -> b
+  }
+}
+\end{lstlisting}
+    \end{subfigure}
+\caption{The \code{handler}-construct gets desugared into a \code{handle}-construct where the computation $m$ is abstracted over using a function.}\label{fig:closedhandler-desugar}
+\end{figure}
+
+The \code{open handler}-constructs get desugared in a similar fashion, but, with a small twist: The \code{handle}-construct gets wrapped inside a thunk. The extra layer of indirection entailed by this transformation is \emph{the key} to make handlers composable. The crucial insight is that by transforming every open handler into a thunk compositionality follows for free because computations are modelled as thunks.
+Figure \ref{fig:openhandler-desugar} shows the conceptual transformation for \code{open handler}-constructs.
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[c]{0.45\textwidth}
+        \centering
+\begin{lstlisting}[style=links]
+open handler(m) {
+  case Op§*$_i$*§(p§*$_i$*§,k§*$_i$*§) -> b§*$_i$*§
+  case Return(x) -> b
+}
+\end{lstlisting}        
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[c]{0.1\textwidth}
+      $\Rightarrow$
+    \end{subfigure}%
+    ~
+    \begin{subfigure}[c]{0.45\textwidth}
+        \centering
+\begin{lstlisting}[style=links]
+fun(m) {
+  fun() {
+    handle(m) {
+      case Op§*$_i$*§(p§*$_i$*§,k§*$_i$*§) -> b§*$_i$*§
+      case Return(x) -> b
+    }
+  }
+}
+\end{lstlisting}       
+    \end{subfigure}
+\caption{The \code{open handler}-construct gets desugared into a thunked \code{handle}-construct.}\label{fig:openhandler-desugar}
+\end{figure}
+
 \section{Type inference}
 \section{Pattern-matching compilation}
+Syntactically, the \code{handler}-construct and \code{switch}-construct are similar. Figure \ref{fig:handler-switch} puts the two construct side-by-side.
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[c]{0.45\textwidth}
+        \centering
+\begin{lstlisting}[style=links]
+handler(m) {
+  case Op§*$_i$*§(p§*$_i$*§,k§*$_i$*§) -> b§*$_i$*§
+  case Return(x) -> b
+}
+\end{lstlisting}        
+    \end{subfigure}%  
+    ~
+    \begin{subfigure}[c]{0.45\textwidth}
+        \centering
+\begin{lstlisting}[style=links]
+switch(x) {
+  case §*$\textit{Pattern}_j$*§ -> b§*$_j$*§
+  case other   -> b§*$'$*§
+}
+\end{lstlisting}       
+    \end{subfigure}
+\caption{The \code{handler}-construct resembles the \code{switch}-construct syntactically.}\label{fig:handler-switch}
+\end{figure}
+Notably, their semantics differ as \code{switch} allows arbitrary pattern matching on an expression $x$ and \code{handler} only allows pattern matching on possible operation names in some computation $m$. Furthermore, \code{switch} has a default case \code{other} which is not allowed in \code{handler}. The resemblance has certain benefits:
+\begin{itemize}
+  \item Syntactical commonalities makes handlers feel like a natural integrated part in Links,
+  \item and we can reuse the \code{switch} infrastructure for \code{handler}.
+\end{itemize}
+
 \section{Interpreter}
+The intermediate representation used by the Links compiler is a variant of A-normalform (ANF) \cite{Flanagan1993}. In particular, the Links interpreter directly interprets the ANF code \cite{Lindley2012}.
