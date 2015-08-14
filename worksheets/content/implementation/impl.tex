@@ -157,7 +157,7 @@ handler(m) {
     \begin{subfigure}[c]{0.45\textwidth}
         \centering
 \begin{lstlisting}[style=links]
-switch(x) {
+switch(e) {
   case §*$\textit{Pattern}_j$*§ -> b§*$_j$*§
   case other   -> b§*$'$*§
 }
@@ -172,7 +172,7 @@ The resemblance has certain benefits:
   \item Syntactical commonalities makes handlers feel like a natural integrated part in Links,
   \item and we can reuse the \code{switch} pattern-matching compilation infrastructure for \code{handler}.
 \end{itemize}
-The \code{switch} pattern-matching compiler supports deep pattern-matching which we want for matching on actual operation parameters, but only a handful of patterns are legal for matching on continuation parameters. Figure \ref{fig:cont-pattern-matching} shows the legal pattern-matching for the continuation parameter. Moreover, the \code{Return}-case must only take one parameter. These small subtleties prevent us from using the \code{switch} pattern-matching compiler directly.
+The \code{switch} pattern-matching compiler supports deep pattern-matching which we want for matching on actual operation parameters, but only a handful of patterns are permitted for matching on continuation parameters. Figure \ref{fig:cont-pattern-matching} shows the legal pattern-matching for the continuation parameter. Moreover, the \code{Return}-case must only take one parameter. These small subtleties prevent us from using the \code{switch} pattern-matching compiler directly.
 
 \begin{figure}[H]
 \begin{center}
@@ -185,7 +185,7 @@ The \code{switch} pattern-matching compiler supports deep pattern-matching which
          }
 \end{lstlisting}        
 \end{center}
-\caption{Legal patterns for matching on the continuation parameter.}\label{fig:cont-pattern-matching}
+\caption{Permissible patterns for matching on the continuation parameter.}\label{fig:cont-pattern-matching}
 \end{figure}
 
 Instead we embed the \code{switch} pattern-matching compiler along with a preliminary pattern-matching analyser in the \code{handler} pattern-matching compiler. The pattern-matching analyser checks that the patterns are legal, i.e.

@@ -1,7 +1,9 @@
 \documentclass[a4paper,twoside,11pt]{report}
 \usepackage[utf8]{inputenc}   % Enable UTF-8 typing
 \usepackage[british]{babel}   % British English
-\usepackage{hyperref}         % Interactive PDF
+\usepackage[breaklinks]{hyperref}         % Interactive PDF
+\usepackage{url}
+\usepackage{breakurl}
 \usepackage{amsmath}          % Mathematics library
 \usepackage{amssymb}          % Provides math fonts
 \usepackage{amsthm}           % Provides \newtheorem, \theoremstyle, etc.
@@ -19,7 +21,7 @@
 \usepackage[
 backend=bibtex,
 style=numeric,
-sorting=ynt
+sorting=nyt
 ]{biblatex}                   % Bibliography
 \addbibresource{references.bib}
 
