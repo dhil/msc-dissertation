@@ -165,11 +165,36 @@ switch(x) {
     \end{subfigure}
 \caption{The \code{handler}-construct resembles the \code{switch}-construct syntactically.}\label{fig:handler-switch}
 \end{figure}
-Notably, their semantics differ as \code{switch} allows arbitrary pattern matching on an expression $x$ and \code{handler} only allows pattern matching on possible operation names in some computation $m$. Furthermore, \code{switch} has a default case \code{other} which is not allowed in \code{handler}. The resemblance has certain benefits:
+Notably, their semantics differ as \code{switch} allows arbitrary pattern matching on an expression $x$ and \code{handler} only allows pattern matching on possible operation names in some computation $m$. Furthermore, \code{switch} has a default case \code{other} which is not allowed in \code{handler}. 
+Their syntactic similarities give rise to a similar internal representation as well. Although, the internal representation of \code{handler} contains extra attributes such as whether the handler is open or closed.
+The resemblance has certain benefits:
 \begin{itemize}
   \item Syntactical commonalities makes handlers feel like a natural integrated part in Links,
-  \item and we can reuse the \code{switch} infrastructure for \code{handler}.
+  \item and we can reuse the \code{switch} pattern-matching compilation infrastructure for \code{handler}.
 \end{itemize}
+The \code{switch} pattern-matching compiler supports deep pattern-matching which we want for matching on actual operation parameters, but only a handful of patterns are legal for matching on continuation parameters. Figure \ref{fig:cont-pattern-matching} shows the legal pattern-matching for the continuation parameter. Moreover, the \code{Return}-case must only take one parameter. These small subtleties prevent us from using the \code{switch} pattern-matching compiler directly.
+
+\begin{figure}[H]
+\begin{center}
+\begin{lstlisting}[style=links]
+         handler(m) {
+           case Op§*$_i$*§(_,k)  -> b§*$_i$*§      # Name binding
+           case Op§*$_j$*§(_,k as c) -> b§*$_j$*§  # Aliasing
+           case Op§*$_l$*§(_,_)  -> b§*$_l$*§      # Wildcarding
+           case Return(x) -> b
+         }
+\end{lstlisting}        
+\end{center}
+\caption{Legal patterns for matching on the continuation parameter.}\label{fig:cont-pattern-matching}
+\end{figure}
+
+Instead we embed the \code{switch} pattern-matching compiler along with a preliminary pattern-matching analyser in the \code{handler} pattern-matching compiler. The pattern-matching analyser checks that the patterns are legal, i.e.
+\begin{itemize}
+  \item An operation-case has at least two parameters, where the last parameter is supposed to be the continuation.
+  \item Pattern-matching on a continuation parameter is either name binding, aliasing or wildcarding.
+  \item \code{Return}-case(s) only take one parameter.
+\end{itemize}
+If the pattern-matching analysis is successful then the \code{switch} pattern matching compiler is invoked to generate the code. Otherwise, a compilation error, complaining about illegal patterns, is emitted.
 
 \section{Interpreter}
 The intermediate representation used by the Links compiler is a variant of A-normalform (ANF) \cite{Flanagan1993}. In particular, the Links interpreter directly interprets the ANF code \cite{Lindley2012}.

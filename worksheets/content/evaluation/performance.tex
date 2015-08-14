@@ -2,18 +2,42 @@
 Since Links is an interpreted language it does not make sense to measure the raw execution speed of handled computations as the overhead incurred by the interpreter is likely to be dominant. Instead, we will measure the relative cost incurred by using handlers.
 
 \subsection{Experiment setup}
-
+The experiments was conducted on a standard Informatics DICE Machine\footnote{Machine name: Enna. Specifications: Intel Core i5-4570 3.20 Ghz, 8 GB Ram, Scientific Linux 6.6 (Carbon) running Linux kernel 2.6.32-504.16.2.el6.x86\_64}. Three different micro benchmarks:
+\begin{itemize}
+  \item Stateful counting: Counting down from $10^7$ to $0$ using a closed state handler.
+  \item Stateful counting with logging: Counting down from $10^7$ to $0$ using the state logging handler from Example \ref{ex:logging-state}.
+  \item Nim game tree generation: Generation of game tree with starting configuration $n = 20$ using the handler from Example \ref{ex:nim-game-tree}.
+\end{itemize}
+Each benchmark has a pure counter part
 \subsection{Results}
 Table \ref{tbl:results} displays the results obtained from the experiments.
 \begin{table}[H]
   \centering
-  \begin{tabular}{| c | c | c | c |}
+  \begin{tabular}{| l | r | r | r |}
     \cline{2-4}
-    \multicolumn{1}{c |}{} & Handlers (ms) & Regular (ms) & Relative cost (\%) \\
+    \multicolumn{1}{c |}{} & \multicolumn{1}{c |}{Handlers (ms)} & \multicolumn{1}{c |}{Pure (ms)} & \multicolumn{1}{c |}{Relative cost (\%)} \\
     \hline
-    Simple state & & &\\
+    Stateful counting & & &\\
     \hline
-    Nested state & & &\\
+    Stateful counting with log & & &\\
+    \hline
+    Nim game tree generation & & &\\
     \hline
   \end{tabular}\caption{Results}\label{tbl:results}
+\end{table}
+
+Table \ref{tbl:pure-vs-pure} displays the comparison of the handler version and two different pure versions of the Nim game tree generation program. The first pure version is the direct, hard-coded approach used to compare against the handler version in Table \ref{tbl:results}, whilst the second is a generic approach making use of higher-order functions, e.g. \code{zip}, \code{map} etc. like the handler version.
+\begin{table}[H]
+  \centering
+  \begin{tabular}{| l | r | r |}
+    \cline{2-3}
+    \multicolumn{1}{c |}{} & \multicolumn{1}{c |}{Time (ms)} & {Relative cost} \\
+    \hline
+    Pure hard-coded &  & 1.0 \\
+    \hline
+    Pure generic    &  & \\
+    \hline
+    Handler         &  & \\
+    \hline
+  \end{tabular}\caption{Comparison of the handler version and two different pure versions of the Nim game tree generation program.}\label{tbl:pure-vs-pure}
 \end{table}
