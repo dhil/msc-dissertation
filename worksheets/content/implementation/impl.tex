@@ -197,4 +197,20 @@ Instead we embed the \code{switch} pattern-matching compiler along with a prelim
 If the pattern-matching analysis is successful then the \code{switch} pattern matching compiler is invoked to generate the code. Otherwise, a compilation error, complaining about illegal patterns, is emitted.
 
 \section{Interpreter}
-The intermediate representation used by the Links compiler is a variant of A-normalform (ANF) \cite{Flanagan1993}. In particular, the Links interpreter directly interprets the ANF code \cite{Lindley2012}.
+% Continuation passing style (CPS) is often used as an intermediate representation during the optimisation stage by functional compilers. In particular, CPS makes it easy to implement first-class control in the source level as CPS exposes the current continuation \cite{Appel2007}.
+
+% A related intermediate representation is A-Normal Form (ANF) which is used by the Links compiler. Furthermore, the Links interpreter directly interprets ANF code \cite{Lindley2012}.
+% ANF is a relatively simple language that enjoys many of the same advantages as CPS such as explicit exposure of the current continuation \cite{Flanagan1993}. However, CPS is better for performing optimisations, but the simpler nature of ANF makes it amendable as an interpreted language \cite{Appel2007,Flanagan1993}. 
+The Links compiler uses A-Normal Form (ANF) as an intermediate representation. In particular, the Links interpreter directly interprets ANF code.
+ANF is a relatively simple direct-style language which makes it easy to implement first-class control in the source language \cite{Flanagan1993}. Furthermore, a \code{let} construct assigns names to every intermediate computation, hence, it is in some sense equivalent to the imperative intermediate representation Static Single Assignment form \cite{Flanagan1993}. Its simple nature makes it amendable as an interpreted language.
+
+The Links ANF partitions expressions into two classes: atomic expressions and complex expressions. An expression is considered atomic if it is pure, i.e. it terminates and causes no effects. A complex expression must be \code{let}-bound. For example the expression \code{g(f(x))} gets translated into the bound expression \code{let z = f(x) in g(z)}.
+
+
+The original Links interpreter directly threaded the current continuation through the program. The continuation was implemented as a stack of continuation frames. A continuation frame is quadruple $(\mathcal{S},\mathcal{B},\mathcal{E},\mathcal{C})$ where
+\begin{itemize}
+  \item $\mathcal{C}$ is a computation.
+  \item $\mathcal{E}$ is an environment that binds names in $\mathcal{C}$ to values.
+  \item $\mathcal{B}$ is a binder for the computation.
+  \item $\mathcal{S}$ denotes the scope of the computation.
+\end{itemize}
