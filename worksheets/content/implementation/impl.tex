@@ -143,7 +143,7 @@ fun(m) {
 \[
 \mprset{flushleft}
 \inferrule{E_{in} \defas \{\type{Op}_i : a_i \to b_i\}_i \uplus \rho \\\\
-           E_{out} \defas E'' \uplus \rho\\\\
+           E_{out} \defas E_{\alpha} \uplus \rho\\\\
            H \defas \{\code{Return}(x) \mapsto M\} \uplus \{\type{Op}_i(p,k) \mapsto N_i\}_i \\\\
           \left( \varGamma, p : a_i, k : U_{E_{out}}(b_i \to c) \vdash_{E_{out}} N_i : c \right)_i \\\\
           \varGamma, x : A \vdash_{E_{out}} M : C}
