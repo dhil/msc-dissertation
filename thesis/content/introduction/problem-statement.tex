@@ -1,0 +1,8 @@
+\section{Problem statement}
+In the previous section we argued that programming with \emph{explicit} effect is desirable, but we pointed out that it is not painless to program with explicit effects. In particular, we demonstrated that the monadic approach lacks compositionality and modularity. But we could regain compositionality using Monad Transformers, however the transformer stack imposes a statical ordering on effects which impedes modularity. Compositionality and modularity are two key properties in programming which we ideally would like to retain along with explicit effects. This observation leads us to the following problem statement:
+\begin{quote}
+  \emph{How may we achieve a programming model with modular, composable and unordered effects?}
+\end{quote}
+Plotkin and Pretnar's handlers for algebraic effects \cite{Plotkin2013} affords a very attractive model for programming with effects. The principal idea is to decouple the semantics and syntactic structure of effectful computations, i.e. an effect is a collection of abstract operations. By abstract we mean that the operation by itself has no concrete implementation. Abstract operations compose seamlessly to form the syntactical structure of the computation, whilst handlers instantiate abstract operations with a concrete interpretation. We will discuss handlers and algebraic effects in greater detail in Section \ref{sec:handlers-and-effects}.
+
+We suppose that handlers for algebraic effects provide a desirable model for programming with effects. A substantial amount of work has already been put into handlers and effects. In Section \ref{sec:relatedwork} we discuss and evaluate related work before we propose our own solution in Section \ref{sec:proposedsolution}.

@@ -1,0 +1,84 @@
+\section{Row polymorphism}\label{sec:rowpolymorphism}
+Row polymorphism is a typing discipline for records \cite{Remy1993}. A record is an unordered collection of fields, e.g. $\record{l_1 : t_1,\dots,l_n : t_n}$ denotes a record type with $n$ fields where $l_i$ and $t_i$ denote the name and type, respectively, of the $i$th field. Moreover, the record type is monomorphic, that is, the type is fixed. Row polymorphism, as the name suggests, makes record types polymorphic.
+
+The following illustrates the power of row polymorphism.
+\begin{example}
+OCaml's (regular) record types are monomorphic.\footnote{OCaml's object types are row polymorphic.} Consider the following two record type definitions in OCaml
+\begin{lstlisting}[style=ocaml]
+type student    = {name : string; id : string}
+type supervisor = {name : string; group : string} 
+\end{lstlisting}
+Now we can create instances of \type{student} and \type{supervisor}
+\begin{lstlisting}[style=ocaml]
+ocaml> let daniel = {name="Daniel"; id="s1467124"};;
+val daniel : person = {name="Daniel"; id="s1467124"}
+
+ocaml> let sam = {name="Sam"; group="LFCS"};;
+val sam : supervisor = {name="Sam"; group="LFCS"}
+\end{lstlisting}
+As expected the OCaml compiler infers the correct record types for both instances. Since both record types have the field \emph{name} in common we might expect to define a function which prints the name field of either record type, e.g.
+\begin{lstlisting}[style=ocaml]
+ocaml> let print_name r = r.name;;
+ocaml> let () = 
+         print_name daniel;
+         print_name sam;;
+\end{lstlisting}
+Surprisingly this yields the following type error
+\begin{lstlisting}[style=ocaml]
+         print_name daniel;
+                    ^^^^^^
+Error: This expression has type student
+       but an expression was expected of type supervisor
+\end{lstlisting}
+The record \code{daniel} is not compatible with the type of \code{print\_name}. Because the record types are monomorphic, the compiler has to decide on compile time which record type \code{print\_name} accepts as input parameter. Apparently in this example the compiler has decided to type \code{print\_name} as \type{supervisor $\to$ string}.
+
+Now consider the same example in Links. In contrast to OCaml record types are polymorphic in Links.
+First we define the \code{print\_name} function
+\begin{lstlisting}[style=links]
+links> fun print_name(r) { r.name };
+print_name = fun : ((name:a|§*$\rho$*§)) ~> a
+\end{lstlisting}
+Links tells us that the function accepts a record type which has \emph{at least} the field \type{name}. The field type is polymorphic as signified by the presence of the type variable \type{a}. The additional type variable $\rho$ is a polymorphic row variable which can be instantiated to additional fields, hence the actual input record may contain \emph{more} fields. Now our printing function works as expected:
+\begin{lstlisting}[style=links]
+links> fun(){ print_name(daniel);
+              print_name(sam) }();
+Daniel
+Sam
+\end{lstlisting}
+Here we wrapped the applications of \code{print\_name} inside a parameterless function because Links does not support expression sequencing in the top-level.
+\end{example}
+More on $\rho$, unification, etc\dots
+% Records are unordered collections of fields, e.g. $\record{l_1:t_1,\dots,l_n : t_n}$ denotes a record type with $n$ fields where $l_i$ and $t_i$ denote the name and type, respectively, of the $i$th field.
+% Records are particularly great for structuring related data.
+% For example the record instance $\record{name="Daniel", age=25}$ could act as simple description of a person.
+% A possible type for the record would be $\record{name : \typename{string}, age : \typename{int}}$.
+% The implicit ordering of fields in records is not important as the following two types are considered equivalent:
+% \[ \record{name : \typename{string}, age : \typename{int}} \equiv \record{age : \typename{int}, name : \typename{string}}. \]
+% The equivalence captures what is meant by \emph{unordered} collection of fields.
+
+% We can define functions that work on records, for example, occasionally we might find it useful to retrieve the name field in an instance of the person-record:
+% \[ \text{name}_1 = \lambda x . (x.name). \]
+% We can apply $\text{name}_1$ to the above record instance, e.g. 
+% \[ \text{name}_1(\record{name="Daniel", age=25}) = "Daniel" \] 
+% yields the expected value.
+% The question remains which type the function $\text{name}_1$ has.
+% For this particular example the type $\record{name : \typename{string}} \to \typename{string}$ seems reasonable.
+
+% Now, consider the following function takes a record and returns a pair where the first component contains the value of the name field and the second component contains the input record itself:
+% \[ \text{name}_2 = \lambda x . (x.name, x) \]
+% Again, we ask ourselves what is the type of $\text{name}_2$?
+% The function must have type $\record{name : \typename{string}} \to \typename{string} \times \record{name : \typename{string}}$.
+% This type appears innocuous, but consider the consequence of
+% \[ \text{let }(n, r) = \text{name}_2(\record{name="Daniel", age=25}). \]
+% Now, $n$ has type $\typename{string}$ as desired, but $r$ has type \record{name : \typename{string}}.
+% In other words, we have lost the field ``age''.
+% This example is a particular instance of the \emph{loss of information} problem.
+
+% Row polymorphism was conceived to address this problem. 
+% Row polymorphism is powerful a typing discipline for typing records \cite{Remy1993}.
+% The principal idea is to extend record types with a \emph{polymorphic row variable}, $\rho$, which can be instantiated with additional fields.
+% For example with row polymorphism our function $\text{name}_2$ would have type $\record{name : \typename{string} \; | \; \rho }$, and $r$ in the previous example would be assigned the type $\record{name : \typename{string}, age : \typename{int} \; | \; \rho }$.
+% Now, we have no longer lose information.
+
+% \subsection{Type theoretic row polymorphism}
+% \subsection{Row polymorphism is not subtyping}

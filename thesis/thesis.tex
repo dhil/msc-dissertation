@@ -1,65 +1,104 @@
-%%%%%%%%%%%%%%%%%%%%%%%%
-%% Sample use of the infthesis class to prepare a thesis. This can be used as 
-%% a template to produce your own thesis.
-%%
-%% The title, abstract and so on are taken from Martin Reddy's csthesis class
-%% documentation.
-%%
-%% MEF, October 2002
-%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%
-%% Load the class. Put any options that you want here (see the documentation
-%% for the list of options). The following are samples for each type of
-%% thesis:
-%%
-%% Note: you can also specify any of the following options:
-%%  logo: put a University of Edinburgh logo onto the title page
-%%  frontabs: put the abstract onto the title page
-%%  deptreport: produce a title page that fits into a Computer Science
-%%      departmental cover [not sure if this actually works]
-%%  singlespacing, fullspacing, doublespacing: choose line spacing
-%%  oneside, twoside: specify a one-sided or two-sided thesis
-%%  10pt, 11pt, 12pt: choose a font size
-%%  centrechapter, leftchapter, rightchapter: alignment of chapter headings
-%%  sansheadings, normalheadings: headings and captions in sans-serif
-%%      (default) or in the same font as the rest of the thesis
-%%  [no]listsintoc: put list of figures/tables in table of contents (default:
-%%      not)
-%%  romanprepages, plainprepages: number the preliminary pages with Roman
-%%      numerals (default) or consecutively with the rest of the thesis
-%%  parskip: don't indent paragraphs, put a blank line between instead
-%%  abbrevs: define a list of useful abbreviations (see documentation)
-%%  draft: produce a single-spaced, double-sided thesis with narrow margins
-%%
-%% For a PhD thesis -- you must also specify a research institute:
-%\documentclass[phd,ilcc,twoside]{infthesis}
-
-%% For an MPhil thesis -- also needs an institute
-% \documentclass[mphil,ianc]{infthesis}
-
-%% MSc by Research, which also needs an institute
-% \documentclass[mscres,irr]{infthesis}
-
 %% Taught MSc -- specify a particular degree instead. If none is specified,
 %% "MSc in Informatics" is used.
-\documentclass[msc,cs,twoside,openright,logo,rightchapter,normalheadings,notimes]{class/infthesis}
+\documentclass[msc,cs,twoside,openright,logo,rightchapter,normalheadings]{class/infthesis}
 % \documentclass[msc]{infthesis}  % for the MSc in Informatics
 
-%% Master of Informatics (5 year degree)
-% \documentclass[minf]{infthesis}
+%% Packages
+\usepackage[utf8]{inputenc}   % Enable UTF-8 typing
+\usepackage[british]{babel}   % British English
+\usepackage[breaklinks]{hyperref}         % Interactive PDF
+\usepackage{url}
+\usepackage{breakurl}
+\usepackage{amsmath}          % Mathematics library
+\usepackage{amssymb}          % Provides math fonts
+\usepackage{amsthm}           % Provides \newtheorem, \theoremstyle, etc.
+\usepackage{mathpartir}       % Inference rules
+\usepackage{float}            % Float control
+\usepackage{caption,subcaption}  % Sub figures support
+\usepackage[T1]{fontenc}      % Fixes font issues
+\usepackage{lmodern}
 
-%% Undergraduate project -- specify the degree course and project type
-%% separately
-% \documentclass[bsc]{infthesis}
-% \course{Artificial Intelligence and Psychology}
-% \project{Fourth Year Project Report}
+\usepackage{tikz}
+\usetikzlibrary{trees}
+\usetikzlibrary{calc}  
+\usetikzlibrary{fit}
+\usetikzlibrary{shapes}
 
-%% Put any \usepackage commands you want to use right here; the following is 
-%% an example:
-\usepackage{natbib}
+\usepackage[
+backend=bibtex,
+style=numeric,
+sorting=nyt
+]{biblatex}                   % Bibliography
+\addbibresource{references.bib}
 
-\usepackage[utf8]{inputenc} % Enables support for UTF-8 characters
+% Source code listings
+\usepackage{xcolor}
+\usepackage{listings}
+
+\lstset{
+ backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
+ basicstyle=\ttfamily\small,        % the size of the fonts that are used for the code
+ commentstyle=\itshape,
+ breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+ breaklines=true,                 % sets automatic line breaking
+ captionpos=b,                    % sets the caption-position to bottom
+ deletekeywords={...},            % if you want to delete keywords from the given language
+ escapeinside={§*}{*§},          % if you want to add LaTeX within your code
+ extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+ frame=none,	                   % adds a frame around the code
+ keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+ numbers=none,                    % where to put the line-numbers; possible values are (none, left, right)
+ rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+ showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+ showstringspaces=false,          % underline spaces within strings only
+ showtabs=false,                  % show tabs within strings adding particular underscores
+ tabsize=2,	                   % sets default tabsize to 2 spaces
+ title=\lstname,                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+  belowcaptionskip=-1\baselineskip,
+  xleftmargin=\parindent
+}
+% Haskell style
+\lstdefinestyle{haskell}{
+  language=Haskell,
+  literate= {+}{{$+$}}1 {*}{{$*$}}1
+            {<=}{{$\leq$}}1 {/=}{{$\neq$}}1 
+            {==}{{$\equiv$}}1 {=>}{{$\Rightarrow$}}1
+            {->}{{$\to$}}1 {<-}{{$\leftarrow$}}1
+            {.}{{$\circ$}}1 {$$}{{\$}}1
+}
+% Ocaml style
+\lstdefinestyle{ocaml}{
+  language=Caml,
+  literate= {+}{{$+$}}1 {*}{{$*$}}1
+            {<=}{{$\leq$}}1 {>=}{{$\geq$}}1 {<>}{{$\neq$}}1 
+            {==}{{$\equiv$}}1 {=>}{{$\Rightarrow$}}1
+            {->}{{$\to$}}1
+}
+% Links style
+\lstdefinestyle{links}{
+  language=Caml,
+  literate= {+}{{$+$}}1 {*}{{$*$}}1
+            {<=}{{$\leq$}}1 {>=}{{$\geq$}}1 
+            {=>}{{$\Rightarrow$}}1
+            {->}{{$\to$}}1 {~>}{{$\rightsquigarrow$}}1
+}
+
+% Example environment
+\makeatletter  
+\def\@endtheorem{\qed\endtrivlist\@endpefalse } % insert `\qed` macro
+\makeatother
+\theoremstyle{definition}
+\newtheorem{example}{Example}
+
+% Convenient macros
+\newcommand{\record}[1]{\ensuremath{\langle #1 \rangle}}
+\newcommand{\typename}[1]{\texttt{#1}}
+\newcommand{\type}[1]{\typename{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\eto}[1]{\ensuremath{\xrightarrow{\left\{#1 \right\}\;}}}
+\newcommand{\thunktype}[2]{\ensuremath{() \eto{#1} #2}}
+\newcommand{\chntype}[2]{\ensuremath{(#1) \to #2}}
+\newcommand{\defas}[0]{\mathrel{\overset{\makebox[0pt]{\mbox{\normalfont\tiny\sffamily def}}}{=}}} % "defined-as-equal"
 
 %% Information about the title, etc.
 \title{Handlers for Algebraic Effects in Links}
@@ -79,7 +118,7 @@
 
 %% Now we start with the actual document.
 \begin{document}
-
+\raggedbottom
 %% First, the preliminary pages
 \begin{preliminary}
 
@@ -99,7 +138,10 @@ Thanks to\dots
 % \dedication{To my mummy.}
 
 %% Create the table of contents
+\setcounter{tocdepth}{1}
+\singlespace
 \tableofcontents
+\doublespace
 
 %% If you want a list of figures or tables, uncomment the appropriate line(s)
 % \listoffigures
@@ -113,22 +155,10 @@ Thanks to\dots
 
 \input{content/index}
 
-%%%%%%%%
-%% Any appendices should go here. The appendix files should look just like the
-%% chapter files.
-%\appendix
-%\include{appendix1}
-%% ... etc...
-
-%% Choose your favourite bibliography style here.
-\bibliographystyle{apalike}
-
 %% If you want the bibliography single-spaced (which is allowed), uncomment
 %% the next line.
-% \singlespace
-
-%% Specify the bibliography file. Default is thesis.bib.
-\bibliography{references}
+\singlespace
+\printbibliography[heading=bibintoc]
 
 %% ... that's all, folks!
 \end{document}

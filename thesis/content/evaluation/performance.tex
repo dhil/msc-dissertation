@@ -1,0 +1,47 @@
+\section{Performance}\label{sec:eval-performance}
+Since Links is an interpreted language it does not make sense to measure the raw execution speed of handled computations as the overhead incurred by the interpreter is likely to be dominant. Instead, we will measure the relative cost incurred by using handlers.
+
+\subsection{Experiment setup}
+The experiments were conducted on a standard Informatics DICE Machine\footnote{Machine name: Enna. Specifications: Intel Core i5-4570 3.20 Ghz, 8 GB Ram, Scientific Linux 6.6 (Carbon) running Linux kernel 2.6.32-504.16.2.el6.x86\_64}. Three different micro benchmarks:
+\begin{itemize}
+  \item Stateful counting: Counting down from $10^7$ to $0$ using a closed state handler.
+  \item Stateful counting with logging: Counting down from $10^7$ to $0$ using the state logging handler from Example \ref{ex:logging-state}.
+  \item Nim game tree generation: Generation of game tree with starting configuration $n = 20$ using the handler from Example \ref{ex:nim-game-tree}.
+\end{itemize}
+Each benchmark program has a pure counterpart. For instance pure stateful counting passes the state as a parameter to the counting function. The pure Nim game tree generator is hard-coded to produce game trees under the restrictions explained in Section \ref{sec:interpreting-nim}. The source code for each pure program is listed in Appendix \ref{app:bench-pure}.
+
+For each benchmark we take 10 samples. To eliminate noise caused by programs benefiting from cache locality the sampling has been interleaved. That is, first we run a benchmark once to produce one sample, then we run another benchmark to produce one sample, and so forth. This process has been repeated 10 times to produce 10 samples for each benchmark.
+
+The built-in performance-measuring mechanism in the Links interpreter has been used to measure the execution time. The execution time only includes the run time of the program, that is it does \emph{not} include loading up the Links interpreter or program compilation.
+\subsection{Results}
+Table \ref{tbl:results} displays the results obtained from the experiments. The intermediate results are listed in Appendix \ref{app:intermediate-results}.
+\begin{table}[H]
+  \centering
+  \begin{tabular}{| l | r | r | r |}
+    \cline{2-4}
+    \multicolumn{1}{c |}{} & \multicolumn{1}{c |}{Handlers (ms)} & \multicolumn{1}{c |}{Pure (ms)} & \multicolumn{1}{c |}{Relative speed} \\
+    \hline
+    Stateful counting & 19097.10 & 9629.14 & 0.50\\
+    \hline
+    Stateful counting with log & 161458.15 & 19097.10 & 0.12 \\
+    \hline
+    Nim game tree generation & 14406.11 & 814.98 & 0.06\\
+    \hline
+  \end{tabular}\caption{Results obtained from the experiments. The handlers and pure columns list the average execution time.}\label{tbl:results}
+\end{table}
+
+Table \ref{tbl:pure-vs-pure} displays the comparison of the handler version and two different pure versions of the Nim game tree generation program. The first pure version is the direct, hard-coded approach used to compare against the handler version in Table \ref{tbl:results}, whilst the second is a generic approach making use of higher-order functions, e.g. \code{zip}, \code{map} etc. like the handler version.
+\begin{table}[H]
+  \centering
+  \begin{tabular}{| l | r | r |}
+    \cline{2-3}
+    \multicolumn{1}{c |}{} & \multicolumn{1}{c |}{Time (ms)} & {Relative speed} \\
+    \hline
+    Pure hard-coded &  814.98 & 1.0 \\
+    \hline
+    Pure generic    &  12441.01 & 0.07 \\
+    \hline
+    Handler         &  14406.11 & 0.06 \\
+    \hline
+  \end{tabular}\caption{Comparison of the handler version and two different pure versions of the Nim game tree generation program.}\label{tbl:pure-vs-pure}
+\end{table}

@@ -1,0 +1,160 @@
+\section{Open handlers}\label{sec:openhandlers}
+Open handlers are the dual to closed handlers when we think in terms of bounds on effects. An open handler give a lower bound on the kind of effects it will handle. Through composition of open handlers we can achieve a tighter bound on the handled effects. Consequently, one can delegate responsibility to \emph{specialised} handlers that handle a particular subset of the effects. Unhandled operations are forwarded to subsequent handlers. In other words, an open handler partially interprets an abstract computation and leaves the remainder for other handlers.
+
+In Links the concrete syntax for open handlers is similar to that for closed handlers. To declare an open handler one simply uses the keyword \code{open} in the declaration, e.g.
+\begin{lstlisting}[style=links]
+open handler h(m) {
+  case Op§*$_i$*§(p§*$_i$*§,k§*$_i$*§)  -> body§*$_i$*§
+  case Return(x)  -> body
+}
+\end{lstlisting}
+The inferred type for the open handler \code{h} is more complex than its closed counterpart:
+\[ \code{h} : (() \xrightarrow{ \{ \type{Op}_i: a_i \to b_i \; | \; \rho\}\; } c) \to () \xrightarrow{ \{ \type{Op}_i: \alpha_i \; | \; \rho\}\;} d\]
+Notice that the effect row of the input computation is \emph{polymorphic} as signified by the presence of the row variable $\rho$. Accordingly, the input computation may perform more operations than the handler handles. The output type of an open handler looks very similar to its input type. The input as well as the output is a thunk. Moreover, their effect rows share the same polymorphic row variable $\rho$. But their operation signatures differ. The polymorphic variable $\alpha_i$ denotes that the $i$'th operation may be present or absent from the effect row.
+
+Since the input type and output type of open handlers match we can compose open handlers seamlessly. The order of composition implicitly defines a stack of handlers. For example the composition of three handlers $(h_1 \circ h_2 \circ h_3)(m)$ applied to some computation $m$ defines a stack where $h_3$ is the top-most element. Thus the handler stack is built outside in. The ordering inside the stack determines which handler is invoked when $m$ discharges an operation. First the top-most handler is invoked, and if it cannot handle the discharged operation then the operation is forwarded to the second top-most handler and so forth.
+
+Consequently, the order of composition may affect the semantics, say, $h_1$ and $h_2$ interpret the same operation differently, then, $h_1 \circ h_2$ and $h_2 \circ h_1$ potentially yield different results.
+
+The composition of open handlers is itself an open handler, thus it will return a thunk itself. For example $(h_1 \circ h_2 \circ h_3)(m)$ yield some nullary function $() \to a$ which we must explicitly invoke to obtain the result of the computation $m$. To avoid this extra invocation recall the \code{force} handler from Section \ref{sec:transform}. We can apply the closed handler \code{force} to obtain the result of $m$ directly, e.g. $(\code{force} \circ h_1 \circ h_2 \circ h_3)(m)$ yields a result of type $a$ immediately.
+
+\subsection{An effectful coffee dispenser in Links}
+In Section \ref{sec:problem-with-monads} and \ref{sec:mt} we implemented a model of a coffee dispenser in Haskell using monads (Examples \ref{ex:coffee1} and \ref{ex:coffee2}). However, it was difficult to extend the model to include more properties like writing to a display and system failures without resorting to Monad Transformers due to regular monads' lack of compositionality.
+
+In contrast, the modularity and compositionality afforded by (open) handlers enable us to easily implement a the a highly modular coffee dispenser model in Links. Example \ref{ex:coffee-links} implements the model. % and Example \ref{ex:coffee-links2} demonstrates how the modularity and compositionality of handlers extend the model without breaking a sweat.
+\begin{example}[Coffee dispenser]\label{ex:coffee-links}
+The coffee dispenser performs two operations directly
+\begin{enumerate}
+  \item \type{Ask}: Retrieves the inventory.
+  \item \type{Tell}: Writes a description of an item to some medium.
+\end{enumerate}
+Indirectly, the coffee dispenser may perform the \type{Fail} operation when it looks up an item. Thus the type of the dispenser is 
+\[ \code{dispenser} : a \xrightarrow{\{\type{Ask}:() \to [(a, b)], \type{Fail}:() \to b,\type{Tell}:b \to c| \rho\}\;} c \]
+We compose the coffee dispenser from the aforementioned operations and the look-up function, e.g.
+\begin{lstlisting}[style=links]
+fun dispenser(n) {
+  var inv = do Ask();
+  var item = lookup(n,inv);
+  do Tell(item)
+}
+\end{lstlisting}
+The monadic coffee dispenser model used three monads: \type{Reader}, \type{Writer} and \type{Maybe} to model the desired behaviour. We will implement three handlers which resemble the monads. First, let us implement \type{Reader}-monad as the handler \code{reader} whose type is 
+\[  (() \xrightarrow{\{\type{Ask}:(a) \to [(\type{Int}, [|\type{Coffee}|\type{Tea}|\rho_1|])] \, | \,\rho_2\}\;} b) \to () \xrightarrow{\{\type{Ask}:\alpha|\rho_2\}\;} b \]
+For simplicity we hard-code the inventory into the handler
+\begin{lstlisting}[style=links]
+open handler reader(m) {
+  case Ask(_,k)  -> k([(1,Coffee),(2,Tea)])
+  case Return(x) -> x
+}
+\end{lstlisting}
+When handling the operation \type{Ask} the handler simply invokes the continuation \code{k} with the inventory as parameter. Like in Example \ref{ex:coffee1} we model the inventory as an association list.
+
+Second, we implement the handler \code{writer} which provide capabilities to write to a medium. We let the medium be a regular string. The handler's type is
+\[  (() \xrightarrow{\{\type{Tell}: [|\type{Coffee}|\type{Tea}|] \to \type{String} \, | \,\rho\}\;} a) \to () \xrightarrow{\{\type{Tell}:\alpha|\rho_2\}\;} a \]
+and its definition is
+\begin{lstlisting}[style=links]
+open handler writer(m) {
+  case Tell(Coffee,k) -> k("Coffee")
+  case Tell(Tea,k)    -> k("Tea")
+  case Return(x)      -> x
+}
+\end{lstlisting}
+Here we use pattern-matching to convert \type{Coffee} and \type{Tea} into their respective string representations.
+
+Finally, we implement the \code{lookup} function which given a key and an association list returns the element associated with the key if the key exists in the list, otherwise it discharges the \type{Fail}-operation to signal failure
+\begin{lstlisting}[style=links]
+fun lookup(n, xs) {
+  switch (xs) {
+    case [] -> do Fail()
+    case ((k, e) :: xs) -> if (n == k) { e }
+                          else { lookup(n, xs) }
+  }
+}
+\end{lstlisting}
+To handle failure we reuse the \type{maybe}-handler from Section \ref{sec:maybehandler} with the slight change that we make it an open handler. Now, we just have to glue all the components together
+\begin{lstlisting}[style=links]
+fun runDispenser(n) {
+  force(maybe(writer(reader(fun() { dispenser(n) }))))
+}
+\end{lstlisting}
+Note, that in this example the order in which we compose handlers is irrelevant.
+Running a few examples we see that it behaves similarly to the monadic version we implemented in Section \ref{sec:mt}
+\begin{lstlisting}[style=links]
+links> runDispenser(1)
+Just("Coffee") : [|Just:String|Nothing|§*$\rho$*§|]
+
+links> runDispenser(2)
+Just("Tea") : [|Just:String|Nothing|§*$\rho$*§|]
+
+links> runDispenser(3)
+Nothing() : [|Just:String|Nothing|§*$\rho$*§|]
+\end{lstlisting}
+\end{example}
+Observe that when we implemented the monadic version of the \code{dispenser} using Monad Transformers we had to pay careful attention to the ordering of effects up front because we had to lift certain operations. This issue is no longer present with handlers. In fact, we first defined \code{dispenser} without considering the concrete the interpretation of the operations \type{Ask} and \type{Tell} (and \type{Fail}). Furthermore, the effect ordering does not leak into the inferred effect row as opposed to Monad Transformers. The effect row typing is pivotal to the modular design afforded by handlers. Programmers can truly implement composable components independently as they do not have to worry about issues such as the shadow issue which is caused by having an ordering on effects.
+
+\subsection{Reinterpreting Nim}\label{sec:reinterpreting-nim}
+In Section \ref{sec:interpreting-nim} we gave various interpretations of the game Nim using closed handlers. Example \ref{ex:nim-cheat-detection} demonstrates how we can use the compositionality of open handlers to extend the game with an additional cheat detection mechanism without breaking a sweat.
+
+We reuse the game model and auxiliary functions from Section \ref{sec:reinterpreting-nim}.
+\begin{example}[Cheat detection in Nim]\label{ex:nim-cheat-detection}
+First, we implement a function that given a player, the number of remaining sticks $n$ and the number, and a continuation $k$ determines whether the player cheats. We call this function \code{checkChoice}, it will perform two operations: \type{Move} and \type{Cheat}, the former simulates a particular move whilst the latter operation is used to signal that cheating has occurred. The type of the function is
+\[
+\code{checkChoice} : (a, b, \type{Int} \xrightarrow{E} c) \xrightarrow{E} c
+\] 
+where $E \defas \{\type{Cheat}:(a, \type{Int}) \to c,\type{Move}:(a, b) \to \type{Int}|\rho\}$. The following is its implementation:
+\begin{lstlisting}[style=links]
+fun checkChoice(player,n,k) {
+  var take = do Move(player,n);
+  if (take < 1 || 3 < take) { # Cheater detected!
+    do Cheat(player,take)
+  } else {                    # Otherwise OK
+    k(take)
+  }
+}
+\end{lstlisting}
+First, we simulate the player's move. If the player's choice is not in the set of valid moves $\{1,2,3\}$ then the function signals that cheating has occurred, otherwise the continuation \code{k} is invoked to actually perform the move. Now, it is straightforward to implement a handler which uses \code{checkChoice} to detect cheating, e.g.
+\begin{lstlisting}[style=links]
+open handler checkgame(m) {
+  case Move((player,n),k) -> checkChoice(player,n,k)
+  case Return(x)          -> x
+}
+\end{lstlisting}
+Note that the type of \code{checkgame} is $(() \xrightarrow{E} c) \to () \xrightarrow{E} c$ where the effect row $E$ is the same as above. Hence \code{checkgame} is itself an abstract computation.
+Therefore we will need two more handlers which interpret the \type{Cheat} and \type{Move} operations. We encode the cheater's strategy into the handler which handles the additional \type{Move} operation discharged by \code{checkgame}, e.g.
+\begin{lstlisting}[style=links]
+fun cheater(n,k) {
+    k(n)
+}
+
+open handler aliceCheats(m) {
+  case Move((Alice,n),k) -> cheater(n,k)
+  case Move((Bob,n),k)   -> perfect(n,k)
+  case Return(x)         -> x
+}
+\end{lstlisting}
+Here a cheater's strategy is simply to take all sticks in the heap and thereby win the game in one single move. In the handler \code{aliceCheats} we assign the cheater's strategy to Alice whilst Bob plays the perfect strategy. Thus if we play without cheat detection then Alice will always win in a single move because she always starts.
+
+Finally, we interpret the \type{Cheat} operation by halting the game and reporting the cheater, e.g.
+\begin{lstlisting}[style=links]
+open handler cheatReport(m) {
+  case Cheat((Alice,n),k) -> error("Cheater Alice took " ^^ intToString(n) ^^ " sticks")
+  case Cheat((Bob,n),k)   -> error("Cheater Bob took " ^^ intToString(n) ^^ " sticks")
+  case Return(x)          -> x
+}
+\end{lstlisting}
+Here, we pattern match on the player to determine who cheated. The \code{error} function halts the game and reports to standard out who cheated along with how many sticks the player took. Now, we can put everything together and try a few examples:
+\begin{lstlisting}[style=links]
+fun checkedGame(m) {
+  force(aliceCheats(cheatReport(checkgame(m))))
+}
+
+links> play(checkedGame, 36);
+*** Fatal error : Cheater Alice took 36 sticks
+
+links> play(checkedGame, 3);
+Alice() : [|Alice|Bob|§*$\rho$*§|]
+\end{lstlisting}
+Alice still wins when $0 < n \leq 3$ because in this particular game configuration it is a legal move to take all sticks.
+Moreover, observe that the order in which we compose handlers is important in this example because \code{checkgame} is itself an abstract computation, therefore if we swap \code{aliceCheats} and \code{checkgame} the cheat detection mechanism never gets invoked. Accordingly, Alice would always win because she cheats.
+\end{example}
+Like in the previous Nim game examples we changed the strategic behaviour of the players without changing the game model (\code{aliceTurn} and \code{bobTurn}), however, in addition in Example \ref{ex:nim-cheat-detection} we also extended the game mechanics without changing the game model.
