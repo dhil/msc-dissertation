@@ -45,9 +45,9 @@ Figure \ref{fig:compiler-phases} provides a high level picture of how the differ
 
   % Backend
   \node [my rectangle,xshift=+4.0cm,draw=black,thick,right of=Parser] (Sugartoir) {IR Compiler};
-  \node [my rectangle,yshift=-0.5cm,draw=black,thick,below of=Sugartoir] (PMC) {\begin{tabular}{l}Pattern\\Matching\\ Compiler\end{tabular}};
+  \node [my rectangle,yshift=-0.8cm,draw=black,thick,below of=Sugartoir] (PMC) {\begin{tabular}{l}Pattern\\Matching\\ Compiler\end{tabular}};
   
-  \node[rectangle,draw=black,ultra thick,minimum width=+4.0cm,minimum height=+5.0cm,fit ={(Sugartoir.north) (PMC.south)}] (Backend) {};
+  \node[rectangle,yshift=0.3cm,draw=black,ultra thick,minimum width=+4.0cm,minimum height=+5.0cm,fit ={(Sugartoir.north) (PMC.south)}] (Backend) {};
 
   % Interpreter
   \node [rectangle,xshift=+3.5cm,draw=black,thick,right of=Backend] (Evalir) {Interpreter};
@@ -64,8 +64,8 @@ Figure \ref{fig:compiler-phases} provides a high level picture of how the differ
   \draw [->, thick] (Parser.south) -- (Early desugar.north) {};
   \draw [->, thick] (Early desugar.south) -- (Typechecker.north) {};
 
-  \draw [->, thick,out=150, in=20] (Sugartoir.-10.-150) -- (PMC.135.0) {};
-  \draw [->, thick] (PMC.43.0) -- (Sugartoir.-19.0) {};
+  \draw [->, thick,transform canvas={xshift=-1.0cm}] (Sugartoir.south) -- (PMC.north) {};
+  \draw [->, thick,transform canvas={xshift=1.0cm}] (PMC.north) -- (Sugartoir.south) {};
 \end{tikzpicture}
 \caption{Links compiler phases overview.}\label{fig:compiler-phases}
 \end{center}
