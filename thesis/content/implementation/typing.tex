@@ -6,9 +6,10 @@ The type checker implements the following typing rule for open handlers \cite{Ka
            E_{out} \defas E_{forward} \uplus \rho\\\\
            H \defas \{\code{Return}(x) \mapsto M\} \uplus \{\type{Op}_i(p,k) \mapsto N_i\}_i \\\\
           \left( \varGamma, p : A_i, k : U_{E_{out}}(B_i \to C) \vdash_{E_{out}} N_i : C \right)_i \\\\
-          \varGamma, x : A \vdash_{E_{out}} M : C}
+          \varGamma, m : A \vdash_{E_{out}} M : C}
           {\varGamma \vdash H : A\, \overset{E_{in}\;\;\;E_{out}}{\Rightarrow} C}
 \end{equation}
+The rule says, that if a computation $m$ of type $A$ performs effects $E_{in}$, and the type signatures of the operations handled by the handler $H$ agree with $E_{in}$, and the return clause has type $C$, then $H$ handles an effectful computation $m$ with effects $E_{in}$, and may itself cause effects $E_{out}$ and returns a computation of type $M$.
 The typing rule for closed handlers is similar, however, it leaves out the row variable $\rho$.
 
 \subsection{Implementation details}
