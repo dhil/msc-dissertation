@@ -178,10 +178,10 @@ The \code{switch} pattern-matching compiler supports deep pattern-matching which
 \begin{center}
 \begin{lstlisting}[style=links]
          handler(m) {
-           case Op§*$_i$*§(_,k)  -> b§*$_i$*§      # Name binding
-           case Op§*$_j$*§(_,k as c) -> b§*$_j$*§  # Aliasing
-           case Op§*$_l$*§(_,_)  -> b§*$_l$*§      # Wildcarding
-           case Return(x) -> b
+           case Op§*$_{i_1}$*§(_,k)      -> b§*$_{i_1}$*§  # Name binding
+           case Op§*$_{i_2}$*§(_,k as c) -> b§*$_{i_2}$*§  # Aliasing
+           case Op§*$_{i_3}$*§(_,_)      -> b§*$_{i_3}$*§  # Wildcarding
+           case Return(x)     -> b§*$_{i_4}$*§
          }
 \end{lstlisting}        
 \end{center}
@@ -202,15 +202,17 @@ If the pattern-matching analysis is successful then the \code{switch} pattern ma
 % A related intermediate representation is A-Normal Form (ANF) which is used by the Links compiler. Furthermore, the Links interpreter directly interprets ANF code \cite{Lindley2012}.
 % ANF is a relatively simple language that enjoys many of the same advantages as CPS such as explicit exposure of the current continuation \cite{Flanagan1993}. However, CPS is better for performing optimisations, but the simpler nature of ANF makes it amendable as an interpreted language \cite{Appel2007,Flanagan1993}. 
 The Links compiler uses A-Normal Form (ANF) as an intermediate representation. In particular, the Links interpreter directly interprets ANF code.
-ANF is a relatively simple direct-style language which makes it easy to implement first-class control in the source language \cite{Flanagan1993}. Furthermore, a \code{let} construct assigns names to every intermediate computation, hence, it is in some sense equivalent to the imperative intermediate representation Static Single Assignment form \cite{Flanagan1993}. Its simple nature makes it amendable as an interpreted language.
+ANF is a relatively simple direct-style language which partitions expressions into two classes: atomic expressions and complex expressions. An expression is considered atomic if it is pure, i.e. it causes no effects and it terminates \cite{Flanagan1993}. On the other hand, every complex expression must be assigned a fresh name. For example the Links expression \code{g(f(h(x)))} gets translated into the Links-ANF computation \code{($\{$let y = h(x), let z = f(y)$\}$, g(z))} where the first component is a list of \code{let}-bound intermediate computations, and the second component is a tail computation. Incidentally, it is straightforward to implement first-class control in the source language as the current continuation can be built from the Links-ANF computation. Moreover, the simplicity of ANF makes it amendable as an interpreted language.
 
-The Links ANF partitions expressions into two classes: atomic expressions and complex expressions. An expression is considered atomic if it is pure, i.e. it terminates and causes no effects. A complex expression must be \code{let}-bound. For example the expression \code{g(f(x))} gets translated into the bound expression \code{let z = f(x) in g(z)}.
-
-
-The original Links interpreter directly threaded the current continuation through the program. The continuation was implemented as a stack of continuation frames. A continuation frame is quadruple $(\mathcal{S},\mathcal{B},\mathcal{E},\mathcal{C})$ where
+The Links interpreter is written in continuation-passing style (CPS) which threads the current continuation directly through the program. The continuation was implemented as a stack of continuation frames which capture computations along with their contexts. Formally, a continuation frame is quadruple $F \defas (\mathcal{S},\mathcal{B},\mathcal{E},\mathcal{C})$ where
 \begin{itemize}
   \item $\mathcal{C}$ is a computation.
-  \item $\mathcal{E}$ is an environment that binds names in $\mathcal{C}$ to values.
+  \item $\mathcal{E}$ is an environment that binds names in $\mathcal{C}$.
   \item $\mathcal{B}$ is a binder for the computation.
   \item $\mathcal{S}$ denotes the scope of the computation.
 \end{itemize}
+For example the expression above gets encoded as the following continuation frame
+\[ (\text{scope}(\code{y}), \code{y}, \text{localise}(\code{y}), \code{(\{let z = f(y)\}, g(z))}) \]
+where scope and localise are two functions, that return the scope of a binder and localises the binder in the current environment, respectively.
+
+In order to support handlers it is necessary to generalise the notion of continuation in the Links interpreter.
