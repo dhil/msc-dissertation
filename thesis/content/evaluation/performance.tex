@@ -1,8 +1,8 @@
 \section{Performance}\label{sec:eval-performance}
 Since Links is an interpreted language it does not make sense to measure the raw execution speed of handled computations as the overhead incurred by the interpreter is likely to be dominant. Instead, we will measure the relative cost incurred by using handlers.
 
-\subsection{Experiment setup}
-The experiments were conducted on a standard Informatics DICE Machine\footnote{Machine name: Enna. Specifications: Intel Core i5-4570 3.20 Ghz, 8 GB Ram, Scientific Linux 6.6 (Carbon) running Linux kernel 2.6.32-504.16.2.el6.x86\_64}. Three different micro benchmarks:
+\subsection{Benchmarks setup}
+The experiments were conducted on a standard Informatics DICE Machine\footnote{Machine name: Enna. Specifications: Intel Core i5-4570 3.20 Ghz, 8 GB Ram, Scientific Linux 6.6 (Carbon) running Linux kernel 2.6.32-504.16.2.el6.x86\_64}. The following three different micro benchmarks were used:
 \begin{itemize}
   \item Stateful counting: Counting down from $10^7$ to $0$ using a closed state handler.
   \item Stateful counting with logging: Counting down from $10^7$ to $0$ using the state logging handler from Example \ref{ex:logging-state}.
@@ -29,8 +29,10 @@ Table \ref{tbl:results} displays the results obtained from the experiments. The 
     \hline
   \end{tabular}\caption{Results obtained from the experiments. The handlers and pure columns list the average execution time.}\label{tbl:results}
 \end{table}
+There is a significant increase in execution speed when using handlers. The closed state handler in the first benchmark is roughly twice as expensive as the pure tail recursive counting method.
+In the second state benchmark the state grows as the computation progresses, the handler version is about 8 times as expensive as the pure tail recursive method. Finally, the game tree generating handler is about 16 times as expensive as the direct, hard-coded game tree generator.
 
-Table \ref{tbl:pure-vs-pure} displays the comparison of the handler version and two different pure versions of the Nim game tree generation program. The first pure version is the direct, hard-coded approach used to compare against the handler version in Table \ref{tbl:results}, whilst the second is a generic approach making use of higher-order functions, e.g. \code{zip}, \code{map} etc. like the handler version.
+The handler game tree generator is far more general than the pure version as it can generate the game tree for any game, while the pure version only generates for the specific restricted Nim game we used in Section \ref{sec:interpreting-nim}. It may not be completely fair to compare the general handler against the hand-tuned function. Therefore, we have implemented a generic pure game tree generator that makes use of higher-order functions, like the handler version, e.g. \code{zip}, \code{map}, etc. The performance results are displayed in Table \ref{tbl:pure-vs-pure}. The results are surprising as the handler and generic pure version have almost equal performance.
 \begin{table}[H]
   \centering
   \begin{tabular}{| l | r | r |}
