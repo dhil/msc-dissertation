@@ -1,0 +1,100 @@
+\section{Interpreter}
+% Continuation passing style (CPS) is often used as an intermediate representation during the optimisation stage by functional compilers. In particular, CPS makes it easy to implement first-class control in the source level as CPS exposes the current continuation \cite{Appel2007}.
+
+% A related intermediate representation is A-Normal Form (ANF) which is used by the Links compiler. Furthermore, the Links interpreter directly interprets ANF code \cite{Lindley2012}.
+% ANF is a relatively simple language that enjoys many of the same advantages as CPS such as explicit exposure of the current continuation \cite{Flanagan1993}. However, CPS is better for performing optimisations, but the simpler nature of ANF makes it amendable as an interpreted language \cite{Appel2007,Flanagan1993}. 
+The Links compiler uses A-Normal Form (ANF) as an intermediate representation. In particular, the Links interpreter directly interprets ANF code.
+ANF is a relatively simple direct-style language which partitions expressions into two classes: atomic expressions and complex expressions. An expression is considered atomic if it is pure, i.e. it causes no effects and it terminates \cite{Flanagan1993}. On the other hand, every complex expression must be assigned a fresh name. For example the Links expression \code{g(f(h(x)))} gets translated into the Links-ANF computation \code{($\{$let y = h(x), let z = f(y)$\}$, g(z))} where the first component is a list of \code{let}-bound intermediate computations, and the second component is a tail computation. Incidentally, it is straightforward to implement first-class control in the source language as the current continuation can be built from the Links-ANF computation. Moreover, the simplicity of ANF makes it amendable as an interpreted language.
+
+The Links interpreter is written in continuation-passing style (CPS) which threads the current continuation directly through the program. The continuation was implemented as a stack of continuation frames which capture computations along with their contexts. Formally, a continuation frame is quadruple $F \defas (\mathcal{S},\mathcal{B},\mathcal{E},\mathcal{C})$ where
+\begin{itemize}
+  \item $\mathcal{C}$ is a computation.
+  \item $\mathcal{E}$ is an environment that binds names in $\mathcal{C}$.
+  \item $\mathcal{B}$ is a binder for the computation.
+  \item $\mathcal{S}$ denotes the scope of the computation.
+\end{itemize}
+For example the expression above gets encoded as the following continuation frame
+\[ \left( \text{scope}(\code{y}), \code{y}, \text{localise}(\code{y}), \code{(\{let z = f(y)\}, g(z))} \right) \]
+where scope and localise are two functions, that return the scope of a binder and localises the binder in the current environment, respectively.
+
+This particular notion of continuation is problematic for handlers because we need delimited control for continuations assigned by handlers. Therefore it is necessary to generalise the notion of continuation in the Links interpreter. Fortunately, the generalisation is conceptual simple: Lift the continuation into a stack, i.e. let it become a stack of stacks of continuation frames. In other words the generalised continuation embeds the previous continuation layout. Figure \ref{fig:continuation-notion} illustrates the embedding. This scheme effectively turns every stack of continuation frames into a delimited continuation, i.e. a continuation that returns control to the caller.
+
+\begin{figure}[H]
+\begin{center}
+\tikzset{my ellipse/.style={
+        draw=blue, 
+        ultra thick, 
+        rectangle, 
+        anchor=west, 
+        xshift=1.0cm},
+}
+\tikzset{my rectangle/.style={
+        draw=black, 
+        thick, 
+        rectangle, 
+        minimum width={width("Early desugar")+2pt}}
+}
+
+\tikzset{my arrow/.style={-latex, thick}}
+
+\begin{tikzpicture}  
+  % Previous continuation
+  % Draw rectangle
+  \draw[thick,-] (-2.8,0) -- (-2.8,1.0) node[xshift=0.5cm] {};   % Left bar
+  \draw[thick,-] (-2.8,1.0) -- (3.0,1.0) node[anchor=north west] (top) {}; % top
+  \draw[thick,-] (-2.8,0) -- (3.0,0) node[anchor=north west] {};     % bottom
+  \draw[thick,-] (3.0,0) -- (3.0,1.0) node[anchor=north west] {}; % Right bar
+
+  % Draw cell separators
+  \foreach \x in {-1.6,-0.1,1.4}
+     \draw[thick,-] (\x,0) -- (\x,1.0) {};
+
+  % Draw cell contents
+  \draw (-2.3 cm,0) -- (-2.3 cm,0) node[yshift=0.5cm] {$F_{n}$};
+  \draw (-0.8 cm,0) -- (-0.8 cm,0) node[yshift=0.5cm] {$F_{n-1}$};
+  \draw (0.7 cm,0) -- (0.7 cm,0) node[yshift=0.5cm] {$F_{n-2}$};
+  \draw (2.2 cm,0) -- (2.2 cm,0) node[yshift=0.5cm] {$\cdots$};
+
+  % Generalised continuation
+  \draw[ultra thick,-] (-3,-3.0) -- (-3,-1.5) node[xshift=0.5cm] {};   % Left bar
+  \draw[ultra thick,-] (-3,-1.5) -- (7.7,-1.5) node[anchor=north west] (gtop) {}; % top
+  \draw[ultra thick,-] (-3,-3.0) -- (7.7,-3.0) node[anchor=north west] {};     % bottom
+  \draw[ultra thick,-] (7.7,-3.0) -- (7.7,-1.5) node[anchor=north west] {}; % Right bar
+
+
+  % Draw inner continuation rectangle
+  % Draw rectangle
+  \draw[thick,-] (-2.8,-2.75) -- (-2.8,-1.75) node[xshift=0.5cm] {};   % Left bar
+  \draw[thick,-] (-2.8,-1.75) -- (3.0,-1.75) node[anchor=north west] {}; % top
+  \draw[thick,-] (-2.8,-2.75) -- (3.0,-2.75) node[anchor=north west] {};     % bottom
+  \draw[thick,-] (3.0,-2.75) -- (3.0,-1.75) node[anchor=north west] {}; % Right bar
+
+  % Draw first inner continuation cell contents
+  \draw (-2.3 cm,-3.0) -- (-2.3 cm,-3.0) node[yshift=0.7cm] {$F_{n_1}$};
+  \draw (-0.8 cm,-3.0) -- (-0.8 cm,-3.0) node[yshift=0.7cm] {$F_{n_1-1}$};
+  \draw (0.7 cm,-3.0) -- (0.7 cm,-3.0) node[yshift=0.7cm] {$F_{n_1-2}$};
+  \draw (2.2 cm,-3.0) -- (2.2 cm,-3.0) node[yshift=0.7cm] {$\cdots$};
+
+  % Draw inner continuation cell separators
+  \foreach \x in {-1.6,-0.1,1.4}
+     \draw[thick,-] (\x,-2.75) -- (\x,-1.75) {};
+
+  % Draw continuation separators
+  \draw[ultra thick,-] (3.2cm, -3.0) -- (3.2cm, -1.5) node {};
+  \draw[ultra thick,-] (4.7cm, -3.0) -- (4.7cm, -1.5) node {};
+  \draw[ultra thick,-] (6.2cm, -3.0) -- (6.2cm, -1.5) node {};
+  \draw (3.5cm, -3.0) -- (4.0 cm, -3.0) node[draw=none,yshift=0.7cm] {$\cdots$};
+  \draw (5.2cm, -3.0) -- (5.5 cm, -3.0) node[draw=none,yshift=0.7cm] {$\cdots$};
+  \draw (6.5cm, -3.0) -- (7.0 cm, -3.0) node[draw=none,yshift=0.7cm] {$\cdots$};
+
+  % Texts
+  \node [anchor=north, font=\bfseries,yshift=0.7cm,xshift=-8.0cm] at (gtop.north) {Generalised continuation layout};
+  \node [anchor=north, font=\bfseries,yshift=0.7cm,xshift=-3.6cm] at (top.north) {Original continuation layout};
+\end{tikzpicture}
+\caption{The generalised continuation embeds the previous continuation layout.}\label{fig:continuation-notion}
+\end{center}
+\end{figure}
+
+The generalised continuation is built in parallel with a stack of handlers. Whenever the interpreter encounters a handler, it pushes the handler onto the handlers' stack and allocates a new delimited continuation which is pushed onto the stack inside the generalised continuation. The top-most delimited continuation grows as the evaluation progresses. Conversely, when the top-most delimited continuation is depleted the proper \code{Return}-case of the top-most handler is invoked. Additionally, both elements are popped from their respective stacks. The evaluation terminates when the entire generalised continuation has been consumed.
+
+Operation invocation follows a rather simple scheme: Upon encountering an operation the interpreter pops and invokes the top-most handler, if the handler does not handle the operation, then the second top-most handler is popped and invoked and so forth. The interpreter maintains the popped handlers in a separate temporary stack along with their corresponding delimited continuations. The temporary stack is a ``slice'' of the program state which is assigned to the continuation parameter when a matching case is found. If no matching case is found then an ``unhandled operation'' error is emitted. When the continuation is invoked the ``sliced'' state is merged back into the program state. This ensures that the \code{Return}-cases are invoked in the proper order when the handled computation finishes.
