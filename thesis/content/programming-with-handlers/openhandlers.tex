@@ -158,3 +158,8 @@ Alice still wins when $0 < n \leq 3$ because in this particular game configurati
 Moreover, observe that the order in which we compose handlers is important in this example because \code{checkgame} is itself an abstract computation, therefore if we swap \code{aliceCheats} and \code{checkgame} the cheat detection mechanism never gets invoked. Accordingly, Alice would always win because she cheats.
 \end{example}
 Like in the previous Nim game examples we changed the strategic behaviour of the players without changing the game model (\code{aliceTurn} and \code{bobTurn}), however, in addition in Example \ref{ex:nim-cheat-detection} we also extended the game mechanics without changing the game model.
+
+\subsection{Simulating state}\label{sec:state}
+
+\subsection{A stateful parser}
+The state handler enable us to implement stateful handlers that employ the state operations. In this section we will demonstrate how to implement a simple, but highly modular, backtracking parser-handler that interprets parser combinators.

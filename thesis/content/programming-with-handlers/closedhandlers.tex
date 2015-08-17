@@ -109,25 +109,72 @@ links> maybe(success);
 Just(true) : [|Just:Bool|Nothing|§*$\rho$*§|]
 \end{lstlisting}
 \end{example}
-The next example demonstrates an alternative ``exception handling strategy''.
-\begin{example}[The recover handler]\label{ex:recover}
-We can define a handler \code{recover} which ignores the raised exception and resumes execution of the computation.
-The type of \code{recover} is
-\[ \code{recover} : \chntype{\thunktype{\type{Fail}: a \to ()}{b}}{[|\type{Just}:b|\rho|]}. \]
-A slight reminder here: The label \type{Nothing} is absent from the handler's output type because \type{Just} is a polymorphic variant label and its relation to \type{Nothing} is conventional. We define \code{recover} as
+% The next example demonstrates an alternative ``exception handling strategy''.
+% \begin{example}[The recover handler]\label{ex:recover}
+% We can define a handler \code{recover} which ignores the raised exception and resumes execution of the computation.
+% The type of \code{recover} is
+% \[ \code{recover} : \chntype{\thunktype{\type{Fail}: a \to ()}{b}}{[|\type{Just}:b|\rho|]}. \]
+% A slight reminder here: The label \type{Nothing} is absent from the handler's output type because \type{Just} is a polymorphic variant label and its relation to \type{Nothing} is conventional. We define \code{recover} as
+% \begin{lstlisting}[style=links]
+% var recover = handler(m) {
+%   case Fail(_,k) -> k(())
+%   case Return(x) -> Just(x)
+% }
+% \end{lstlisting}
+% In contrast to \code{maybe} from Example \ref{ex:maybe} the \code{recover} handler invokes the continuation \code{k} once. This invocation effectively resumes execution of the computation. Consider \code{recover} applied to the computation \code{yikes} from before
+% \begin{lstlisting}[style=links]
+% links> recover(yikes)
+% Just("Yikes!") : [|Just:String|§*$\rho$*§|]
+% \end{lstlisting}
+% \end{example}
+% Although it is seldom a sound strategy to ignore exceptions the two Examples \ref{ex:maybe} and \ref{ex:recover} demonstrate that we can change the semantics of the computation by changing the handler.
+
+\subsection{Handling choice}\label{sec:choice}
+In Section \ref{sec:effects-as-computation-trees} we visualised some interpretations the abstract computation
 \begin{lstlisting}[style=links]
-var recover = handler(m) {
-  case Fail(_,k) -> k(())
-  case Return(x) -> Just(x)
+fun choice() {
+  if (do Choose()) {
+    if (do Choose()) { 2 }
+    else { 4 }
+  } else {
+    if (do Choose()) { 8 }
+    else { 16 }
 }
 \end{lstlisting}
-In contrast to \code{maybe} from Example \ref{ex:maybe} the \code{recover} handler invokes the continuation \code{k} once. This invocation effectively resumes execution of the computation. Consider \code{recover} applied to the computation \code{yikes} from before
+which uses the operation $\type{Choice} : () \to \type{Bool}$. For completeness we show how to implement these interpretations in Links. Example \ref{ex:positive} shows the positive interpretation and Example \ref{ex:enumerate} shows the enumeration interpretation.
+\begin{example}\label{ex:positive}
+Whenever the operation \type{Choose} is discharged in the computation \code{choice} the handler has to decide whether to pick \code{true} or \code{false}. Therefore the type of the handler \code{positive} must be
+$(() \xrightarrow{\{\type{Choose}:() \to \type{Bool}\}\;} a) \to a$.
+The \code{positive} handler always picks \code{true}, in other words, the continuation is always invoked with the parameter \code{true}, e.g.
 \begin{lstlisting}[style=links]
-links> recover(yikes)
-Just("Yikes!") : [|Just:String|§*$\rho$*§|]
+handler positive(m) {
+  case Choose(_,k) -> k(true)
+  case Return(x)   -> x
+}
+\end{lstlisting}
+Running the handler on the computation \code{choice} yields the expected result:
+\begin{lstlisting}[style=links]
+links> positive(choice);
+\end{lstlisting}
+The definition of the handler \code{negative} from Section \ref{sec:effects-as-computation-trees} is analogous to \code{positive}.
+\end{example}
+
+\begin{example}\label{ex:enumerate}
+The handler \code{enumerate} traverses the entire computation tree as shown in Figure \ref{fig:enumerate}. Therefore, when \type{Choose} is discharged the handler has to invoke the continuation twice. First time with \code{true} and the second time with \code{false}. In particular, the handler must collect the results in a list, so the type of \code{enumerate} is 
+$(() \xrightarrow{\{\type{Choose}:() \to \type{Bool}\}\;} a) \to [a]$.
+The computation returns a single element, therefore we have to use the \code{Return}-case to lift that element into a singleton list. Hence two invocations of the continuation give us two lists which we can join together to form a single list, e.g.
+\begin{lstlisting}[style=links]
+handler enumerate(m) {
+  case Choose(_,k) -> k(true) ++ k(false)
+  case Return(x)   -> [x]
+}
+\end{lstlisting}
+Applying \code{enumerate} to the computation \code{choice} yields the result we arrived at in Section \ref{sec:effects-as-computation-trees}:
+\begin{lstlisting}[style=links]
+links> enumerate(choice);
+[2, 4, 8, 16] : [Int]
 \end{lstlisting}
 \end{example}
-Although it is seldom a sound strategy to ignore exceptions the two Examples \ref{ex:maybe} and \ref{ex:recover} demonstrate that we can change the semantics of the computation by changing the handler.
 
 \subsection{Interpreting Nim}\label{sec:interpreting-nim}
 Nim is a well-studied mathematical strategic game, and probably among the oldest of its kind \cite{Joergensen2009}. In Nim two players take turns to pick between one and three sticks from heaps of sticks. Whoever takes the last stick wins. This play style is also known as \emph{normal play}. 

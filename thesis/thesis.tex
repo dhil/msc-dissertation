@@ -60,6 +60,7 @@ sorting=nyt
 % Haskell style
 \lstdefinestyle{haskell}{
   language=Haskell,
+  basicstyle=\linespread{1.0}\ttfamily\footnotesize,
   literate= {+}{{$+$}}1 {*}{{$*$}}1
             {<=}{{$\leq$}}1 {/=}{{$\neq$}}1 
             {==}{{$\equiv$}}1 {=>}{{$\Rightarrow$}}1
@@ -76,6 +77,7 @@ sorting=nyt
 }
 % Links style
 \lstdefinestyle{links}{
+  basicstyle=\linespread{1.0}\ttfamily\footnotesize,
   language=Caml,
   literate= {+}{{$+$}}1 {*}{{$*$}}1
             {<=}{{$\leq$}}1 {>=}{{$\geq$}}1 
@@ -88,7 +90,7 @@ sorting=nyt
 \def\@endtheorem{\qed\endtrivlist\@endpefalse } % insert `\qed` macro
 \makeatother
 \theoremstyle{definition}
-\newtheorem{example}{Example}
+\newtheorem{example}{Example}[chapter]
 
 % Convenient macros
 \newcommand{\record}[1]{\ensuremath{\langle #1 \rangle}}
