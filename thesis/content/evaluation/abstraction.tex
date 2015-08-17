@@ -1,6 +1,8 @@
 \section{Handlers with row polymorphic effects}\label{sec:eval-abs}
 Through a series of examples in Chapter \ref{ch:programming-with-handlers} we demonstrated that handlers for algebraic effects indeed afford a high-degree of modularity, and, the compositionality of open handlers enables us to extend the interpretation of an abstract computation effortlessly. In particular, row polymorphism makes programming with effects uniform as it effectively eliminates the ordering issue we discussed in Section \ref{sec:mt}.
 
+
+
 \section{Handlers and user-defined effects in Links}
 Syntax-wise handlers appear as a well-integrated part of Links because they borrow their syntax from the existent \code{switch}-construct.
 Furthermore, handlers are first-class citizens in Links, i.e. a handler can be passed as argument to a function, returned from a function or assigned a name. The first-class property is implicitly inherited from functions, because, essentially handlers desugar into functions.

@@ -15,7 +15,7 @@ The first pure game tree generator program is a hard-coded, direct implementatio
 
 %For each benchmark we take 10 samples. To eliminate noise caused by programs benefiting from cache locality the sampling has been interleaved. That is, first we run a benchmark once to produce one sample, then we run another benchmark to produce one sample, and so forth. This process has been repeated 10 times to produce 10 samples for each benchmark.
 
-The built-in performance-measuring mechanism in the Links interpreter has been used to measure the execution time. The execution time only includes the run time of the program, that is it does \emph{not} include loading up the Links interpreter or program compilation.
+The benchmark programs were \emph{not} optimised. Each benchmark was sampled ten times. The built-in performance-measuring mechanism in the Links interpreter has been used to measure the execution time. The execution time only includes the run time of the program, that is it does \emph{not} include loading up the Links interpreter or program compilation.
 \subsection{Results}
 Table \ref{tbl:stateful-counting} displays the results obtained from the first stateful counting benchmark. The direct, tail-recursive implementation is twice the alternative implementations. A state change does not incur an extra cost, because it is passed as an explicit parameter between invocations. However, the handler implementation and the second pure implementation both use functions to encapsulate state, therefore each state change causes a new function allocation. The results would suggest that the penalty is high for repetitive allocation of functions.
 \begin{table}[H]
