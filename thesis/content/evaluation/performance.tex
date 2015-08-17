@@ -8,42 +8,59 @@ The experiments were conducted on a standard Informatics DICE Machine\footnote{M
   \item Stateful counting with logging: Counting down from $10^7$ to $0$ using the state logging handler from Example \ref{ex:logging-state}.
   \item Nim game tree generation: Generation of game tree with starting configuration $n = 20$ using the handler from Example \ref{ex:nim-game-tree}.
 \end{itemize}
-Each benchmark program has a pure counterpart. For instance pure stateful counting passes the state as a parameter to the counting function. The pure Nim game tree generator is hard-coded to produce game trees under the restrictions explained in Section \ref{sec:interpreting-nim}. The source code for each pure program is listed in Appendix \ref{app:bench-pure}.
+Each handler program has two pure counterparts. For the stateful counting benchmarks the first pure version is a direct, tail-recursive implementation which passes the current state as an explicit parameter between invocation. The second pure implementation encapsulates state inside a function in similar fashion to the state handler. 
 
-For each benchmark we take 10 samples. To eliminate noise caused by programs benefiting from cache locality the sampling has been interleaved. That is, first we run a benchmark once to produce one sample, then we run another benchmark to produce one sample, and so forth. This process has been repeated 10 times to produce 10 samples for each benchmark.
+The first pure game tree generator program is a hard-coded, direct implementation for the specific restricted version of Nim we used in Section \ref{sec:interpreting-nim}. The second pure version is more general, and will generate the game tree under any rules. Thus it resembles the handler version. The generality is achieved through use of higher-order functions such as \code{map}, \code{zip}, etc.
+%Each benchmark program has a pure counterpart. For instance pure stateful counting passes the state as a parameter to the counting function. The pure Nim game tree generator is hard-coded to produce game trees under the restrictions explained in Section \ref{sec:interpreting-nim}. The source code for each pure program is listed in Appendix \ref{app:bench-pure}.
+
+%For each benchmark we take 10 samples. To eliminate noise caused by programs benefiting from cache locality the sampling has been interleaved. That is, first we run a benchmark once to produce one sample, then we run another benchmark to produce one sample, and so forth. This process has been repeated 10 times to produce 10 samples for each benchmark.
 
 The built-in performance-measuring mechanism in the Links interpreter has been used to measure the execution time. The execution time only includes the run time of the program, that is it does \emph{not} include loading up the Links interpreter or program compilation.
 \subsection{Results}
-Table \ref{tbl:results} displays the results obtained from the experiments. The intermediate results are listed in Appendix \ref{app:intermediate-results}.
-\begin{table}[H]
-  \centering
-  \begin{tabular}{| l | r | r | r |}
-    \cline{2-4}
-    \multicolumn{1}{c |}{} & \multicolumn{1}{c |}{Handlers (ms)} & \multicolumn{1}{c |}{Pure (ms)} & \multicolumn{1}{c |}{Relative speed} \\
-    \hline
-    Stateful counting & 19097.10 & 9629.14 & 0.50\\
-    \hline
-    Stateful counting with log & 161458.15 & 19097.10 & 0.12 \\
-    \hline
-    Nim game tree generation & 14406.11 & 814.98 & 0.06\\
-    \hline
-  \end{tabular}\caption{Results obtained from the experiments. The handlers and pure columns list the average execution time.}\label{tbl:results}
-\end{table}
-There is a significant increase in execution speed when using handlers. The closed state handler in the first benchmark is roughly twice as expensive as the pure tail recursive counting method.
-In the second state benchmark the state grows as the computation progresses, the handler version is about 8 times as expensive as the pure tail recursive method. Finally, the game tree generating handler is about 16 times as expensive as the direct, hard-coded game tree generator.
-
-The handler game tree generator is far more general than the pure version as it can generate the game tree for any game, while the pure version only generates for the specific restricted Nim game we used in Section \ref{sec:interpreting-nim}. It may not be completely fair to compare the general handler against the hand-tuned function. Therefore, we have implemented a generic pure game tree generator that makes use of higher-order functions, like the handler version, e.g. \code{zip}, \code{map}, etc. The performance results are displayed in Table \ref{tbl:pure-vs-pure}. The results are surprising as the handler and generic pure version have almost equal performance.
+Table \ref{tbl:stateful-counting} displays the results obtained from the first stateful counting benchmark. The direct, tail-recursive implementation is twice the alternative implementations. A state change does not incur an extra cost, because it is passed as an explicit parameter between invocations. However, the handler implementation and the second pure implementation both use functions to encapsulate state, therefore each state change causes a new function allocation. The results would suggest that the penalty is high for repetitive allocation of functions.
 \begin{table}[H]
   \centering
   \begin{tabular}{| l | r | r |}
     \cline{2-3}
     \multicolumn{1}{c |}{} & \multicolumn{1}{c |}{Time (ms)} & {Relative speed} \\
     \hline
-    Pure hard-coded &  814.98 & 1.0 \\
+    Pure I, tail-recursive &  9629.14 & 1.0 \\
     \hline
-    Pure generic    &  12441.01 & 0.07 \\
+    Pure II, function state &  20364.6 & 0.47 \\
     \hline
-    Handler         &  14406.11 & 0.06 \\
+    Closed handler       &  14406.11 & 0.5 \\
     \hline
-  \end{tabular}\caption{Comparison of the handler version and two different pure versions of the Nim game tree generation program.}\label{tbl:pure-vs-pure}
+  \end{tabular}\caption{Results obtained from the stateful counting benchmark.}\label{tbl:stateful-counting}
 \end{table}
+The same seems to be evident for the second stateful counting benchmark. The results are shown in Table \ref{tbl:stateful-counting-logging}. The tail-recursive pure implementation is significantly faster than the two alternative implementations. It is roughly $3.5$ times faster than the pure implementation that encapsulates state inside functions, and further it is about $8$ times faster than the handler version. However, this time there is a big difference between the the second pure implementation and the handler implementation. The pure version is little less than twice as fast as the handler version. Possibly, the additional cost is incurred by the handler being open. Each change in state causes two additional operations to be discharged. In addition the handler stack is unwound three times. In particular, three different delimited continuations are invoked during one state change. When a continuation returns control to a handler, it implicitly passes through the return-cases of that particular handler's predecessors (in order to lift the result of the computation). So, the open handler stack incurs a large extra cost.
+\begin{table}[H]
+  \centering
+  \begin{tabular}{| l | r | r |}
+    \cline{2-3}
+    \multicolumn{1}{c |}{} & \multicolumn{1}{c |}{Time (ms)} & {Relative speed} \\
+    \hline
+    Pure I, tail-recursive &  19097.1 & 1.0 \\
+    \hline
+    Pure II, function state &  68615.1 & 0.28 \\
+    \hline
+    Open handler (stack size: 4) &  161458.15 & 0.12 \\
+    \hline
+  \end{tabular}\caption{Results obtained from the stateful counting with logging benchmark.}\label{tbl:stateful-counting-logging}
+\end{table}
+Finally, in the Nim game tree generator benchmark the hard-coded pure version is superior in terms of execution speed. The generic pure implementation and the handler implementation perform at 7\% and 6\%, respectively, compared to the hard-coded version. The results are shown in table \ref{tbl:nim-bench}.
+The generic pure implementation is about 14\% faster than the handler implementation.
+\begin{table}[H]
+  \centering
+  \begin{tabular}{| l | r | r |}
+    \cline{2-3}
+    \multicolumn{1}{c |}{} & \multicolumn{1}{c |}{Time (ms)} & {Relative speed} \\
+    \hline
+    Pure I, hard-coded &  814.98 & 1.0 \\
+    \hline
+    Pure II, generic   &  12441.01 & 0.07 \\
+    \hline
+    Closed handler     &  14406.11 & 0.06 \\
+    \hline
+  \end{tabular}\caption{Results obtained from the Nim game tree generation benchmark.}\label{tbl:nim-bench}
+\end{table}
+These results suggest that there is plenty of room for optimisations. Kammar et al. achieve better relative performance figures than us \cite{Kammar2013} with their embedding of handlers in Haskell. However their handlers desugar into monads which the Haskell compiler extensively optimises. Thus, it is likely that with optimisations with could achieve far better performance figures.
