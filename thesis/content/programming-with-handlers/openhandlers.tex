@@ -49,7 +49,7 @@ open handler reader(m) {
 \end{lstlisting}
 When handling the operation \type{Ask} the handler simply invokes the continuation \code{k} with the inventory as parameter. Like in Example \ref{ex:coffee1} we model the inventory as an association list.
 
-Second, we implement the handler \code{writer} which provide capabilities to write to a medium. We let the medium be a regular string. The handler's type is
+Secondly, we implement the handler \code{writer} which provide capabilities to write to a medium. We let the medium be a regular string. The handler's type is
 \[  (() \xrightarrow{\{\type{Tell}: [|\type{Coffee}|\type{Tea}|] \to \type{String} \, | \,\rho\}\;} a) \to () \xrightarrow{\{\type{Tell}:\alpha|\rho_2\}\;} a \]
 and its definition is
 \begin{lstlisting}[style=links]
@@ -81,13 +81,13 @@ Note, that in this example the order in which we compose handlers is irrelevant.
 Running a few examples we see that it behaves similarly to the monadic version we implemented in Section \ref{sec:mt}
 \begin{lstlisting}[style=links]
 links> runDispenser(1)
-Just("Coffee") : [|Just:String|Nothing|§*$\rho$*§|]
+Just("Coffee") : Maybe(String)
 
 links> runDispenser(2)
-Just("Tea") : [|Just:String|Nothing|§*$\rho$*§|]
+Just("Tea") : Maybe(String)
 
 links> runDispenser(3)
-Nothing() : [|Just:String|Nothing|§*$\rho$*§|]
+Nothing() : Maybe(String)
 \end{lstlisting}
 \end{example}
 Observe that when we implemented the monadic version of the \code{dispenser} using Monad Transformers we had to pay careful attention to the ordering of effects up front because we had to lift certain operations. This issue is no longer present with handlers. In fact, we first defined \code{dispenser} without considering the concrete the interpretation of the operations \type{Ask} and \type{Tell} (and \type{Fail}). Furthermore, the effect ordering does not leak into the inferred effect row as opposed to Monad Transformers. The effect row typing is pivotal to the modular design afforded by handlers. Programmers can truly implement composable components independently as they do not have to worry about issues such as the shadow issue which is caused by having an ordering on effects.
