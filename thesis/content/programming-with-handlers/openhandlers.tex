@@ -160,6 +160,93 @@ Moreover, observe that the order in which we compose handlers is important in th
 Like in the previous Nim game examples we changed the strategic behaviour of the players without changing the game model (\code{aliceTurn} and \code{bobTurn}), however, in addition in Example \ref{ex:nim-cheat-detection} we also extended the game mechanics without changing the game model.
 
 \subsection{Simulating state}\label{sec:state}
+We can use handlers to simulate stateful computations, and thereby enabling us to abstract over how state is interpreted. To handle state we need two operations:
+\begin{itemize}
+  \item $\type{Get}:() \to s$ that reads the current state.
+  \item $\type{Put}:s \to ()$ that updates the state.
+\end{itemize}
+We will use the following simple stateful computation to illustrate stateful interpretations:
+\begin{lstlisting}[style=links]
+fun scomp() {
+  var s = do Get(); do Put(s + 2);
+  var s = do Get(); do Put(s + s);
+  do Get()
+}
+\end{lstlisting}
+First, the computation reads the current integer state, then the state is incremented by 2. The new state is then read and doubled. The computation returns the final state. Example \ref{ex:state} gives a direct interpretation of state.
+\begin{example}\label{ex:state}
+Since Links does not have mutable variables we have to find another way to implement state. A pure functional approach is to pass the state around as an explicit parameter.
+Basically, we adopt this approach to implement state, however, we will introduce an extra layer of indirection
+to pass the state around. We will abstract over state by encapsulating it inside a function. The function will take a concrete state $s$ as input parameter. For the \type{Get}-, \type{Put}- and \type{Return}-cases the handler returns a new state-encapsulating function. The \code{state} handler is defined as follows
+\begin{lstlisting}[style=links]
+open handler state(m) {
+  case Get(_,k)  -> fun(s) { k(s)(s)  }
+  case Put(p,k)  -> fun(s) { k(())(p) }
+  case Return(x) -> fun(s) { x }
+}
+\end{lstlisting}
+The \code{state} handler is partially lazy as when either \type{Get} and \type{Put} are discharged the handler returns a single parameter function. Therefore the handler basically suspends the handled computation first time an operation is discharged.
 
-\subsection{A stateful parser}
-The state handler enable us to implement stateful handlers that employ the state operations. In this section we will demonstrate how to implement a simple, but highly modular, backtracking parser-handler that interprets parser combinators.
+At first glance the \code{state} handler may seem dubious. Essentially, the handler builds a chain of functions which passes the state around. Let us break it down: The state function returned by the \type{Get}-case invokes the continuation with the current state which is substituted at the invocation site of \type{Get}. The continuation returns the next state function to which the same state is passed.
+The \type{Put}-case invokes the continuation with unit and passes the modified state \code{p} as input to the next state function.
+When a stateful computation finishes the \type{Return}-case lifts the result into a function, that ignores its argument. The type of the \code{state} handler is 
+\[ 
+(() \xrightarrow{ \{ \type{Get}: () \to s, \type{Put}: s \to () \; | \; \rho\}\;} a) \to () \xrightarrow{ \{\type{Get}:\theta_1, \type{Put}:\theta_2 \; | \; \rho\}\;} s \to a 
+\]
+where the type $s \to a$ is the type of a state function. The type variable $s$ is the type of the initial state. In order to execute a stateful computation it is convenient to have a driver function \code{runState} which abstracts away these details, e.g.
+\begin{lstlisting}[style=links]
+fun runState(s0, m) {
+  force(state(m))(s0)
+}
+\end{lstlisting}
+Applying \code{runState} to some initial state $s_0$ and \code{scomp} we see that it behaves as desired:
+\begin{lstlisting}[style=links]
+links> runState(0, scomp);
+2 : Int
+links> runState(-2, scomp);
+-2 : Int
+links> runState(3, scomp);
+8 : Int
+\end{lstlisting}
+\end{example}
+The \code{state} handler in Example \ref{ex:state} returns the most recent state. Incidentally, taking advantage of the composition, we can give a different interpretation which track state changes as Example \ref{ex:state-tracking} demonstrates. 
+\begin{example}{Stateful logging}\label{ex:state-tracking}
+We extend the \code{state} handler with a logging capability, however, we will not add this capability directly to the handler. Instead we are going to use composition to construct a stateful handler which keeps track of state changes. The idea is to introduce a new operation $\type{LogPut} : s \to ()$ which logs some state of type $s$. Further, we introduce two new handlers:
+\begin{itemize}
+  \item $\code{putLogger} : (() \xrightarrow{ \{\type{Put}:s \to () \; | \; \rho_1\}\;} s) \to () \xrightarrow{ \{ \type{LogPut}: s \to (),\type{Put}:s \to () \; | \; \rho_1\}\;} s$
+  \item $\code{logState} : (() \xrightarrow{\{ \type{LogPut}: s \to () \; | \; \rho_2\}\;} s) \to () \xrightarrow{\{\type{LogPut}:\theta \; | \; \rho_2 \}\;} (s, [s])$
+\end{itemize}
+The \code{putLogger} handler handles a \type{Put} operation, however, it discharge a \type{Put}-operation itself along with a \type{LogPut}-operation as signified by their presence in the output effect signature.
+We implement \code{putLogger} as follows
+\begin{lstlisting}[style=links]
+open handler putLogger(m) {
+  case Put(p,k)  -> { do LogPut(p); do Put(p); k(()) }
+  case Return(x) -> x
+}
+\end{lstlisting}
+In the \type{Put}-case the handler first discharges \type{LogPut} to log the state change, and then it performs the actual state change by discharging \type{Put}. In some sense \type{putLogger} acts as a ``middleman'' because it relies wholly on other handlers to interpret \type{LogPut} and \type{Put}.
+
+The \code{logState} handler builds the log, e.g.
+\begin{lstlisting}[style=links]
+open handler logState(m) {
+  case LogPut(x,k) -> { 
+        var s = k(());
+        var xs = second(s);
+        (first(p), (x :: xs))
+      }
+  case Return(x) -> (x, [])			 
+}
+\end{lstlisting}
+The handler returns the final state along with a list of previous state changes. In the \code{LogPut}-case the handler first invokes the continuation in order to advance the stateful computation. The continuation returns a pair which contains the final state along with a list of changes. The handler preserves the first component, but it extends the second component with the previous state \code{x}.
+In order to handle \type{Get} and \type{Put} we compose the above handlers with the \code{state} handler. Finally, we can reinterpret the computation \code{scomp}:
+\begin{lstlisting}[style=links]
+links> runState(0, scomp);
+(2, [1, 2]) : (Int, [Int])
+links> runState(-2, scomp);
+(-2, [-1, -2]) : (Int, [Int])
+links> runState(3, scomp);
+(8, [4, 8]) : (Int, [Int])
+\end{lstlisting}
+\end{example}
+\subsection{A handler based parsing framework}\label{sec:parserlibrary}
+The state handler enable us to implement abstract, stateful handlers that employ the state operations. In this section we will demonstrate how to implement a simple, but highly modular, backtracking parser-handler that interprets parser combinators.
