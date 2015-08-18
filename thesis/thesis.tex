@@ -13,6 +13,7 @@
 \usepackage{amssymb}          % Provides math fonts
 \usepackage{amsthm}           % Provides \newtheorem, \theoremstyle, etc.
 \usepackage{mathpartir}       % Inference rules
+\usepackage{array}
 \usepackage{float}            % Float control
 \usepackage{caption,subcaption}  % Sub figures support
 \usepackage[T1]{fontenc}      % Fixes font issues
@@ -101,6 +102,7 @@ sorting=nyt
 \newcommand{\thunktype}[2]{\ensuremath{() \eto{#1} #2}}
 \newcommand{\chntype}[2]{\ensuremath{(#1) \to #2}}
 \newcommand{\defas}[0]{\mathrel{\overset{\makebox[0pt]{\mbox{\normalfont\tiny\sffamily def}}}{=}}} % "defined-as-equal"
+\newcommand{\rulesep}{\unskip\ \vrule\ } % Inserts a vertical line
 
 %% Information about the title, etc.
 \title{Handlers for Algebraic Effects in Links}
