@@ -29,36 +29,52 @@ true : Bool
 links> meaning_of_life(x-1);
 false : Bool
 \end{lstlisting}
-The body of the function \code{meaning\_of\_life} is a conditional expression with two branches. Because its an \emph{expression} it must return a value, hence a conditional expression must  have at least two branches to cover \code{true} and \code{false} cases.
+The body of the function \code{meaning\_of\_life} is a conditional expression with two branches. Because it is an \emph{expression} it must return a value, hence a conditional expression must  have at least two branches to cover \code{true} and \code{false} cases.
 
-\paragraph{Type annotation and aliasing.} The Links type checker automatically infers types for expressions. But, we can define our own types using the \code{typename} keyword. Type and data constructors start with a capital letter. For instance, we can define a binary tree type constructor:
+\paragraph{Type annotation and aliasing.} The Links type checker automatically infers types for expressions. But, we can define our own types using the \code{typename} keyword. Type and data constructors start with a capital letter. For instance, we can define a \type{Maybe} type constructor:
 \begin{lstlisting}[style=links]
-links> typename BinaryTree = [|Leaf:Int|Node:(BinaryTree,Int,BinaryTree)|]
-BinaryTree = mu a . [|Leaf:Int|Node:(a, Int, a)|]
+links> typename Maybe(a) = [|Just:a|Nothing|];
+Maybe = a . [|Just:a|Nothing|]
 \end{lstlisting}
-The brackets (\code{[|...|]}) are syntax for denoting variant types. The type reads: A binary tree is either a \code{Leaf} with an \code{Int} or a \code{Node} with a triple \code{(a,Int,a)}, where \code{a} is a recursive type variable which Links makes explicit by including \code{mu} in the signature.
-Let us make an instance of \type{BinaryTree}:
+The variable \code{a} is a type variable. So, the type constructor \code{Maybe} takes one type \code{a} as input. The brackets (\code{[|...|]}) are syntax for denoting variant types. The data constructor \code{Just} wraps an element of type \type{a}. Let us make an instance:
 \begin{lstlisting}[style=links]
-links> var tree = Node(Leaf(0),1,Leaf(2));
-tree = Node((Leaf(0), 1, Leaf(2))) : [|Node:([|Leaf:Int|§*$\rho_1$*§|], Int, [|Leaf:Int|§*$\rho_2$*§|])|§*$\rho_3$*§|]
+links> Just(2);
+Just(2) : [|Just:Int|§*$\rho$*§|]
 \end{lstlisting}
-The Links type checker infers type a polymorphic variant type which Links makes it explicit by the presence of $\rho_i$. Links employ structural typing, that is, two types are equivalent if and only if they have identical structure. Often Links infers a more general type than needed, we can help the type checker by annotating an expression:
+The Links type checker infers type a polymorphic variant type which Links makes it explicit by the presence of $\rho$. Links employ structural typing, that is, two types are equivalent if and only if they have identical structure. Often Links infers a more general type than needed, we can help the type checker by annotating an expression:
 \begin{lstlisting}[style=links]
-links> tree == (tree : BinaryTree);
+links> Just(2) == (Just(2) : Maybe(Int));
 true : Bool
 \end{lstlisting}
 Indeed, the two types are compatible due to row polymorphism.
+% \begin{lstlisting}[style=links]
+% links> typename BinaryTree = [|Leaf:Int|Node:(BinaryTree,Int,BinaryTree)|]
+% BinaryTree = mu a . [|Leaf:Int|Node:(a, Int, a)|]
+% \end{lstlisting}
+% The brackets (\code{[|...|]}) are syntax for denoting variant types. The type reads: A binary tree is either a \code{Leaf} with an \code{Int} or a \code{Node} with a triple \code{(a,Int,a)}, where \code{a} is a recursive type variable which Links makes explicit by including \code{mu} in the signature.
+% Let us make an instance of \type{BinaryTree}:
+% \begin{lstlisting}[style=links]
+% links> var tree = Node(Leaf(0),1,Leaf(2));
+% tree = Node((Leaf(0), 1, Leaf(2))) : [|Node:([|Leaf:Int|§*$\rho_1$*§|], Int, [|Leaf:Int|§*$\rho_2$*§|])|§*$\rho_3$*§|]
+% \end{lstlisting}
+% The Links type checker infers type a polymorphic variant type which Links makes it explicit by the presence of $\rho_i$. Links employ structural typing, that is, two types are equivalent if and only if they have identical structure. Often Links infers a more general type than needed, we can help the type checker by annotating an expression:
+% \begin{lstlisting}[style=links]
+% links> tree == (tree : BinaryTree);
+% true : Bool
+% \end{lstlisting}
+% Indeed, the two types are compatible due to row polymorphism.
 
-\paragraph{Pattern matching.} We can use the \code{switch}-construct to pattern match on an expression. For example, we can define a recursive function that folds a \type{BinaryTree} into a sum of its contents:
+\paragraph{Pattern matching.} We can use the \code{switch}-construct to pattern match on an expression. For example, we can define a function converts an instance of \code{Maybe} into an instance of \type{Bool}:
 \begin{lstlisting}[style=links]
-fun sumTree(bintree : BinaryTree) {
-  switch(bintree) {
-    case Leaf(i)     -> i
-    case Node(l,i,r) -> sumTree(l) + i + sumTree(r)
+fun maybe2bool(maybe : Maybe(String)) {
+  switch(maybe) {
+    case Just(p)     -> true
+    case Nothing     -> false
 } }
-links> sumTree(tree);
-3 : Int
+links> maybe2bool(Just(42));
+true : Bool
 \end{lstlisting}
-The \code{case}-statements pattern matches on the expression \code{bintree}. Here we used pattern-matching to decompose the tree to obtain its contents.
+The \code{case}-statements pattern matches on the expression \code{maybe}. Links supports deep pattern-matching, so the \code{switch}-construct can be used to decompose an expression.
+
 \subsection{The effect system}
 Links has a row-based effect system.
