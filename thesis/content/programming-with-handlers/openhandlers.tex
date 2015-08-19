@@ -103,13 +103,13 @@ Nothing() : Maybe(String)
 Observe that when we implemented the monadic version of the \code{dispenser} using Monad Transformers we had to pay careful attention to the ordering of effects up front because we had to lift certain operations. This issue is no longer present with handlers. In fact, we first defined \code{dispenser} without considering the concrete the interpretation of the operations \type{Ask} and \type{Tell} (and \type{Fail}). Furthermore, the effect ordering does not leak into the effect row as opposed to Monad Transformers. The row polymorphism is key to the elimination of the effect ordering issue. Additionally, row polymorphism increases modularity, and eases compositionality. Using this programming model programmers can truly implement modular and composable components independently.
 
 \subsection{Reinterpreting Nim}\label{sec:reinterpreting-nim}
-In Section \ref{sec:interpreting-nim} we gave various interpretations of the game Nim using closed handlers. Example \ref{ex:nim-cheat-detection} demonstrates how we can use the compositionality of open handlers to extend the game with an additional cheat detection mechanism without breaking a sweat. We reuse the game model and auxiliary functions from Section \ref{sec:reinterpreting-nim}.
-\begin{example}[Cheat detection in Nim]\label{ex:nim-cheat-detection}
+In Section \ref{sec:interpreting-nim} we gave various interpretations of Nim using closed handlers. Example \ref{ex:nim-cheat-detection} demonstrates how we can use the compositionality of open handlers to extend the game with an additional cheat detection mechanism without breaking a sweat. We reuse the game model and auxiliary functions from Section \ref{sec:reinterpreting-nim}.
+\begin{example}[Cheat detection in Nim \cite{Kammar2013}]\label{ex:nim-cheat-detection}
 First, we implement a function that given a player, the number of remaining sticks $n$ and the number, and a continuation $k$ determines whether the player cheats. We call this function \code{checkChoice}, it will perform two operations: \type{Move} and \type{Cheat}, the former simulates a particular move whilst the latter operation is used to signal that cheating has occurred. The type of the function is
 \[
-\code{checkChoice} : (a, b, \type{Int} \xrightarrow{E} c) \xrightarrow{E} c
+\code{checkChoice} : (\type{Player}, \type{Int}, \type{Int} \xrightarrow{E} \type{Player}) \xrightarrow{E} \type{Player}
 \] 
-where $E \defas \{\type{Cheat}:(a, \type{Int}) \to c,\type{Move}:(a, b) \to \type{Int}|\rho\}$. The following is its implementation:
+where $E \defas \{\type{Cheat}:(\type{Player}, \type{Int}) \to c,\type{Move}:(\type{Player}, \type{Int}) \to \type{Int}|\rho\}$. The following is its implementation:
 \begin{lstlisting}[style=links]
 fun checkChoice(player,n,k) {
   var take = do Move(player,n);
@@ -122,13 +122,13 @@ fun checkChoice(player,n,k) {
 \end{lstlisting}
 First, we simulate the player's move. If the player's choice is not in the set of valid moves $\{1,2,3\}$ then the function signals that cheating has occurred, otherwise the continuation \code{k} is invoked to actually perform the move. Now, it is straightforward to implement a handler which uses \code{checkChoice} to detect cheating, e.g.
 \begin{lstlisting}[style=links]
-open handler checkgame(m) {
+open handler checkGame(m) {
   case Move((player,n),k) -> checkChoice(player,n,k)
   case Return(x)          -> x
 }
 \end{lstlisting}
-Note that the type of \code{checkgame} is $(() \xrightarrow{E} c) \to () \xrightarrow{E} c$ where the effect row $E$ is the same as above. Hence \code{checkgame} is itself an abstract computation.
-Therefore we will need two more handlers which interpret the \type{Cheat} and \type{Move} operations. We encode the cheater's strategy into the handler which handles the additional \type{Move} operation discharged by \code{checkgame}, e.g.
+The type of \code{checkGame} is $(() \xrightarrow{E} \type{Player}) \to () \xrightarrow{E} \type{Player}$ where the effect row $E$ is the same as above. Hence \code{checkGame} is itself an abstract computation.
+Therefore we will need two more handlers which interpret the \type{Cheat} and \type{Move} operations. We encode the cheater's strategy into the handler which handles the additional \type{Move} operation discharged by \code{checkGame}:
 \begin{lstlisting}[style=links]
 fun cheater(n,k) {
     k(n)
@@ -150,22 +150,21 @@ open handler cheatReport(m) {
   case Return(x)          -> x
 }
 \end{lstlisting}
-Here, we pattern match on the player to determine who cheated. The \code{error} function halts the game and reports to standard out who cheated along with how many sticks the player took. Now, we can put everything together and try a few examples:
+Here, we pattern match on the player to determine who cheated. The \code{error} function halts the game and reports the cheater along with the number of sticks the cheater took. Now, we can put everything together and try a few examples:
 \begin{lstlisting}[style=links]
 fun checkedGame(m) {
-  force(aliceCheats(cheatReport(checkgame(m))))
+  force(aliceCheats(cheatReport(checkGame(m))))
 }
-
 links> play(checkedGame, 36);
 *** Fatal error : Cheater Alice took 36 sticks
 
 links> play(checkedGame, 3);
-Alice() : [|Alice|Bob|§*$\rho$*§|]
+Alice() : Player
 \end{lstlisting}
 Alice still wins when $0 < n \leq 3$ because in this particular game configuration it is a legal move to take all sticks.
-Moreover, observe that the order in which we compose handlers is important in this example because \code{checkgame} is itself an abstract computation, therefore if we swap \code{aliceCheats} and \code{checkgame} the cheat detection mechanism never gets invoked. Accordingly, Alice would always win because she cheats.
+Moreover, observe that the order in which we compose handlers matters in this example because \code{checkGame} is itself an abstract computation, therefore if we swap \code{aliceCheats} and \code{checkGame} the cheat detection mechanism never gets invoked. Accordingly, Alice would always win because she cheats.
 \end{example}
-Like in the previous Nim game examples we changed the strategic behaviour of the players without changing the game model (\code{aliceTurn} and \code{bobTurn}), however, in addition in Example \ref{ex:nim-cheat-detection} we also extended the game mechanics without changing the game model.
+Like in the previous Nim game examples we changed the strategic behaviour of the players without changing the game model (\code{aliceTurn} and \code{bobTurn}), however, in addition we also extended the game mechanics without changing the game model.
 
 \subsection{Simulating state}\label{sec:state}
 We can use handlers to simulate stateful computations, and thereby enabling us to abstract over how state is interpreted. To handle state we need two operations:
@@ -181,8 +180,8 @@ fun scomp() {
   do Get()
 }
 \end{lstlisting}
-First, the computation reads the current integer state, then the state is incremented by 2. The new state is then read and doubled. The computation returns the final state. Example \ref{ex:state} gives a direct interpretation of state.
-\begin{example}[State handler]\label{ex:state}
+First, the computation reads the current integer state, then the state is incremented by 2. The new state is then read and doubled before returning the final state. Example \ref{ex:state} gives a direct interpretation of state.
+\begin{example}[State handler \cite{Kammar2013}]\label{ex:state}
 Since Links does not have mutable variables we have to find another way to implement state. A pure functional approach is to pass the state around as an explicit parameter.
 Basically, we adopt this approach to implement state, however, we will introduce an extra layer of indirection
 to pass the state around. We will abstract over state by encapsulating it inside a function. The function will take a concrete state $s$ as input parameter. For the \type{Get}-, \type{Put}- and \type{Return}-cases the handler returns a new state-encapsulating function. The \code{state} handler is defined as follows
@@ -197,7 +196,7 @@ The \code{state} handler is partially lazy as when either \type{Get} and \type{P
 
 At first glance the \code{state} handler may seem dubious. Essentially, the handler builds a chain of functions which passes the state around. Let us break it down: The state function returned by the \type{Get}-case invokes the continuation with the current state which is substituted at the invocation site of \type{Get}. The continuation returns the next state function to which the same state is passed.
 The \type{Put}-case invokes the continuation with unit and passes the modified state \code{p} as input to the next state function.
-When a stateful computation finishes the \type{Return}-case lifts the result into a function, that ignores its argument. Additionally, the function ends the chain of functions as it returns a concrete state rather than a state-function. The type of the \code{state} handler is \[ 
+When a stateful computation finishes the \type{Return}-case lifts the result into a function, that ignores its argument. In addition, the function ends the chain of functions as it does not invoke another function. The type of the \code{state} handler is \[ 
 (() \xrightarrow{ \{ \type{Get}: () \to s, \type{Put}: s \to () \; | \; \rho\}\;} a) \to () \xrightarrow{ \{\type{Get}:\theta_1, \type{Put}:\theta_2 \; | \; \rho\}\;} s \to a 
 \]
 where $s \to a$ is the type of a state function. The type variable $s$ is the type of the initial state. In order to execute a stateful computation it is convenient to have a driver function \code{runState} which abstracts away these details, e.g.
@@ -217,13 +216,13 @@ links> runState(3, scomp);
 \end{lstlisting}
 \end{example}
 The \code{state} handler in Example \ref{ex:state} returns the most recent state. Incidentally, taking advantage of the composition, we can give a different interpretation which track state changes as Example \ref{ex:state-tracking} demonstrates. 
-\begin{example}[Stateful logging]\label{ex:state-tracking}
+\begin{example}[Stateful logging \cite{Kammar2013}]\label{ex:state-tracking}
 We extend the \code{state} handler with a logging capability, however, we will not add this capability directly to the handler. Instead we are going to use composition to construct a stateful handler which keeps track of state changes. The idea is to introduce a new operation $\type{LogPut} : s \to ()$ which logs some state of type $s$. Further, we introduce two new handlers:
 \begin{itemize}
   \item $\code{putLogger} : (() \xrightarrow{ \{\type{LogPut}: s \to (), \type{Put}:s \to () \; | \; \rho_1\}\;} s) \to () \xrightarrow{ \{ \type{LogPut}: s \to (),\type{Put}:s \to () \; | \; \rho_1\}\;} s$
   \item $\code{logState} : (() \xrightarrow{\{ \type{LogPut}: s \to () \; | \; \rho_2\}\;} s) \to () \xrightarrow{\{\type{LogPut}:\theta \; | \; \rho_2 \}\;} (s, [s])$
 \end{itemize}
-The \code{putLogger} handler handles a \type{Put} operation, however, it discharge a \type{Put}-operation itself along with a \type{LogPut}-operation as signified by their presence in the output effect signature.
+The \code{putLogger} handler handles a \type{Put} operation, however, it also discharges a \type{Put}-operation itself along with a \type{LogPut}-operation as signified by their presence in the output effect signature.
 We implement \code{putLogger} as follows
 \begin{lstlisting}[style=links]
 open handler putLogger(m) {
@@ -255,23 +254,24 @@ links> runState(3, scomp);
 (8, [4, 8]) : (Int, [Int])
 \end{lstlisting}
 \end{example}
-\subsection{A handler based parsing framework}\label{sec:parserlibrary}
-The state handler enable us to implement abstract, stateful handlers that employ the state operations. In this section we will demonstrate how to implement a simple, but highly modular, backtracking parser as a handler that interprets parser combinators. The result is a small parser framework in Links.
 
-To demonstrate the framework we implement a parser for the simple language $\text{\scshape{Palindromes}} \defas \{ w \in \{a,b\}^* \; | \; w\text{ is a palindrome}\}$. The language {\scshape{Palindromes}} is generated by the following grammar
+\subsection{A handler based parsing framework}\label{sec:parserlibrary}
+The state handler enable us to implement abstract, stateful handlers that employ the state operations. In this section we will demonstrate how to implement a simple, but highly modular, backtracking parser as a handler that interprets parser combinators. The result is a small parser library in Links.
+
+To demonstrate the library we implement a parser for the simple language $\text{\scshape{Palindromes}} \defas \{ w \in \{a,b\}^* \; | \; w\text{ is a palindrome}\}$. The language {\scshape{Palindromes}} is generated by the following grammar
 \begin{equation}\label{eq:grammar}
   P ::= a \; | \; b \; | \; aPa \; | \; bPb \; | \; \varepsilon
 \end{equation}
 The grammar is simple, yet it contains choice, concatenation, recursion and the empty string ($\varepsilon$) which are sufficient to make an interesting example.
 
 \subsubsection{Parser combinators}
-The principal idea behind parser combinators is to compose parsers from smaller, simpler parsers. The parsers are abstract computations composed using the following three operations:
+The principal idea behind parser combinators is to compose parsers from smaller, simpler parsers. In our library parsers are abstract computations composed using the following three operations:
 \begin{itemize}
   \item $\type{Choose} : () \to \type{Bool}$ that makes a nondeterministic choice.
   \item $\type{Token}  : () \to \type{Char}$ that consumes a character from the input stream.
   \item $\type{Fail}   : () \to ()$ that signals failure.
 \end{itemize}
-The parsers are implemented as functions whose types are $() \xrightarrow{E} ()$, where $E$ is an open effect row that contains either all, some or none of the above operations. In other words, a parser is a nullary function which may cause several effects, and returns unit. From its signature it is not clear, that a parser does anything sensible. In fact, the purpose of parsers is to capture the structure of a grammar, and we leave the rest of the work to a handler. 
+The parsers are implemented as functions whose types are $() \xrightarrow{E} ()$, where $E$ is an open effect row that contains either all, some or none of the above operations. In other words, a parser is a nullary function which may cause several effects, and returns unit. From its signature it is not clear, that a parser does anything sensible. In fact, the purpose of parsers is to capture the structure of a grammar; concerns regarding the parsing state are left to a handler. 
 
 The two simplest parsers are \code{empty} and \code{char} which accepts the empty string and one particular character, respectively. Their definitions are given below:
 \begin{figure*}[h]
@@ -301,6 +301,7 @@ Empty string parser & Single character parser \\
     \end{subfigure}
 \end{tabular}
 \end{figure*}
+
 The parser \code{empty} does nothing, it simply returns unit. The function \code{char} is not really a parser, but rather a \emph{parser generator}. It takes a character \code{c} as input, and generates a parser that checks whether \code{c} is the next character in the input stream. If \code{c} is the next character, then the parser returns unit otherwise it signals failure.
 
 We require two more basic parser generators: Choice and sequence. The choice generator takes two parsers as input, and makes a nondeterministic choice between the two. The sequence generator takes two parsers, and applies them in sequence. For syntactic conveniency, we define them as binary operators in Links:
@@ -339,12 +340,12 @@ Choice (\code{<|>}) generates a parser which discharges \type{Choose} to decide 
 Later, Example \ref{ex:palindromes} demonstrates how to compose these four parsers to construct a parser for {\scshape{Palindromes}}.
 
 \subsubsection{Interpreting parsers}
-The previous section gave the building blocks for constructing parsers. In this section we will implement an abstract, stateful handler which interprets parsers. The handler has to handle the three operations \code{Choose}, \code{Token} and \code{Fail}. Furthermore, it will use the state operations \code{Get} and \code{Put} to manipulate the parsing state. The parsing state is a pair $\type{PState} \defas ([\type{Char}],[\type{Char}])$ where the first component contains parsed symbols, and the second component contains the remainder of the input stream. Furthermore, if the input string is not in the language then the \code{parser}-handler should produce an error, otherwise it should return the parsed string. Thus, the \code{parser}-handler has the rather involved type
+The previous section gave the building blocks for constructing parsers. In this section we will implement an abstract, stateful handler which interprets parsers. The handler has to handle the three operations \code{Choose}, \code{Token} and \code{Fail}. Furthermore, it will use the state operations \code{Get} and \code{Put} to manipulate the parsing state. The parsing state is a pair $\type{PState} \defas ([\type{Char}],[\type{Char}])$ where the first component contains parsed symbols, and the second component contains the remainder of the input stream. Furthermore, if the input string is not in the language then the handler should produce an error, otherwise it should return the parsed string. Thus, the handler has the rather involved type
 \begin{align*}
 &(() \xrightarrow{\{\type{Choose}: () \to \type{Bool},\type{Fail}: a_1 \to a_2,\type{Get}: () \to \type{PState},\type{Put}: \type{PState} \to (), \type{Token}: () \to \type{Char} \; | \; \rho\}\;} b)\\
 &\to () \xrightarrow{\{\type{Choose}: \theta_1,\type{Fail}: \theta_2,\type{Get}: () \to \type{PState},\type{Put}: \type{PState} \to (), \type{Token}: \theta_3 \; | \; \rho\}\;} \type{Maybe}(\type{[Char]})
 \end{align*}
-This type witnesses a cosmetic issue with the implementation, because effects are not explicitly named the effect signature easily blows up and therefore becomes difficult to read. The parser-handler is more involved than the previous handlers we implemented. Therefore, we name the handler \code{parser} and implement it one case at a time. The easiest case \type{Fail} which, unconditionally, returns \code{Nothing}. We will not show it here, instead we begin with the case for \type{Token}:
+This type witnesses a cosmetic issue with the implementation, because effects are not explicitly named the effect signature easily blows up and therefore becomes difficult to read. The handler is more involved than the previous handlers we implemented. Therefore, we implement it one case at a time. We name the handler \code{parserh}. The easiest case is \type{Fail} which, regardless of the state, returns \code{Nothing}. We will not show it here, instead we begin with the case for \type{Token}:
 \begin{lstlisting}[style=links]
 case Token(_,k) -> {
   var s = do Get();
@@ -354,8 +355,8 @@ case Token(_,k) -> {
     case (x :: xs) -> { do Put((x :: first(s), xs)); k(x) }
 } }
 \end{lstlisting}
-First the handler retrieves the current parsing state, and then pattern matches on the current state of the input stream. In the event that the input stream is empty the handler returns \type{Nothing}. Otherwise, it consumes the next character \code{x} and cons it to the list of parsed symbols. Thereafter the continuation is invoked to return the character \code{x} to the \code{token}-parser that discharged \type{Token}.
-If the subsequent parsing is successful, then the \code{k} returns \code{Just} the result, otherwise it returns \code{Nothing}.
+First the handler retrieves the current parsing state, and then pattern matches on the current state of the input stream. In the event that the input stream is empty the handler returns \type{Nothing}. Otherwise, it consumes the next character \code{x} and conses it onto the list of parsed symbols. Thereafter the continuation is invoked to return the character \code{x} to the \code{token}-parser that discharged \type{Token}.
+If the subsequent parsing is successful, then \code{k} returns \code{Just} the result, otherwise it returns \code{Nothing}.
 The case for \type{Choose} follows a similar pattern:
 \begin{lstlisting}[style=links]
 case Choose(_,k) -> {
@@ -365,7 +366,7 @@ case Choose(_,k) -> {
     case Just(x) -> Just(x)
 } }
 \end{lstlisting}
-Again the handler retrieves the current parsing state \code{s}. Thereafter we pattern match on the result of picking the \code{true}-branch. If it leads to failure, then we restore the previous state \code{s} by discharging a \type{Put}-operation, and then subsequently try the \code{false}-branch. Further, \code{k} returns either \code{Just} the result or \code{Nothing}. If the choice led to success, then we simply return the identity.
+Again the handler retrieves the current parsing state \code{s}. Thereafter we pattern match on the result of choosing the \code{true}-branch. If it leads to failure, then we restore the previous state \code{s} by discharging a \type{Put}-operation, and then subsequently try the \code{false}-branch. Further, \code{k} returns either \code{Just} the result or \code{Nothing}. If the choice led to success, then we simply return the identity.
 Finally, we implement the \type{Return}-case which is somewhat similar to the \type{Token}-case, e.g.
 \begin{lstlisting}[style=links]
 case Return(x)  -> {
@@ -376,16 +377,17 @@ case Return(x)  -> {
     case other -> Nothing
 } }
 \end{lstlisting}
-Here, we pattern match on the input stream to determine whether all input has been consumed. If the stream is empty, then we return \code{Just} the reversed list of parsed symbols, otherwise we return \code{Nothing}. As a final function we implement a convenient driver function \code{parse} to abstract away the details of running the \code{parser}-handler. The \code{parse} function takes a parser \code{p} and a string \code{source} as input parameters:
+Here, we pattern match on the input stream to determine whether all input has been consumed. If the stream is empty, then we return \code{Just} the reversed list of parsed symbols, otherwise we return \code{Nothing}. As a final function we implement a convenient driver function \code{parse} to abstract away the details of running the \code{parserh} handler. The \code{parse} function takes a parser \code{p} and a string \code{source} as input parameters:
 \begin{lstlisting}[style=links]
 fun parse(p, source) {
   var s = ([], explode(source));
-  switch (runState(parser(p), s)) {
+  switch (runState(parserh(p), s)) {
      case Just(r) -> Just(implode(r))
      case Nothing -> Nothing
 } }
 \end{lstlisting}
 The function builds the initial state \code{s}, where the first component is the empty list, and the second component contains the input string as a list of characters. The \code{switch}-expression runs the parser with the initial state, and pattern matches on the result. If the parser was successful, then the list of characters is converted back into a string, otherwise it returns the identity.
+
 \subsubsection{Parsing palindromes}
 The previous two sections provided the basic building blocks for parsing. Now, we are ready to put them into action. Example \ref{ex:palindromes} demonstrates how to parse the {\scshape{Palindromes}} language.
 \begin{example}[{\scshape{Palindromes}} parser]\label{ex:palindromes}
@@ -401,7 +403,7 @@ fun p() {
 \end{lstlisting}
 The function \code{p} is a parser as its type is $() \xrightarrow{E} ()$. The first line in \code{p} constructs two parsers \code{a} and \code{b} which parses a single character each. Next, the parser \code{apa} parses a palindrome which starts with an 'a'. Similarly, \code{bpb} parses a palindrome starting with a 'b'.
 Finally, the parsers are combined to form a parser for the {\scshape{Palindromes}} grammar \eqref{eq:grammar}.
-Notably, the definition of the resulting parser \code{p} corresponds closely to the production rule $P$ in grammar \eqref{eq:grammar}. Note that the parsers in \code{p} are combined in a carefully chosen order to cope with the ambiguity of the grammar.
+Notably, the definition of the resulting parser \code{p} corresponds closely to the definition of the nonterminal $P$ in grammar \eqref{eq:grammar}. Note that the parsers in \code{p} are combined in a carefully chosen order to cope with the ambiguity of the grammar.
 Running the parser on a few examples we obtain:
 \begin{lstlisting}[style=links]
 links> parse(p, "abba");
@@ -410,9 +412,9 @@ links> parse(p, "bbbbaabaabbbb");
 Just("bbbbaabaabbbb") : Maybe(String)
 links> parse(p, "");
 Just("") : Maybe(String) # The empty palindrome
-links> parse(p, "aaabbb");
+links> parse(p, "aaabbbaa");
 Nothing() : Maybe(String)
 \end{lstlisting}
 \end{example}
 
-The entire implementation is less than 100 lines. Yet, the framework is quite general. Shifting all parsing state maintenance to a handler greatly simplifies parser combinators. 
+The entire implementation is less than 100 lines. Yet, the library is quite general. Shifting all parsing state maintenance to a handler greatly simplifies parser combinators. The combinators do not have to be concerned about the parsing state, and as a consequence they can focus entirely on recognising structure. On the other hand the parser handler is not concerned with the syntactic structure of the language, it only has to focus on maintaining the parsing state. Furthermore, the parser handler has no concerns about the interpretation of state as the a separate handler takes care of this state interpretation. Accordingly, we obtain a clear separation of concerns between individual components which communicates through fine-grained abstract interfaces. 
