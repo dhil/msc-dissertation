@@ -1,35 +1,54 @@
 \section{Open handlers}\label{sec:openhandlers}
 Open handlers are the dual to closed handlers when we think in terms of bounds on effects. An open handler give a lower bound on the kind of effects it will handle. Through composition of open handlers we can achieve a tighter bound on the handled effects. Consequently, one can delegate responsibility to \emph{specialised} handlers that handle a particular subset of the effects. Unhandled operations are forwarded to subsequent handlers. In other words, an open handler partially interprets an abstract computation and leaves the remainder for other handlers.
 
-In Links the concrete syntax for open handlers is similar to that for closed handlers. To declare an open handler one simply uses the keyword \code{open} in the declaration, e.g.
+In Links the concrete syntax for open handlers is similar to that for closed handlers. To declare an open handler one simply prepends the keyword \code{open} in the handler declaration, e.g.
 \begin{lstlisting}[style=links]
-open handler h(m) {
-  case Op§*$_i$*§(p§*$_i$*§,k§*$_i$*§)  -> body§*$_i$*§
-  case Return(x)  -> body
+open handler h§*$_1$*§(m) {
+  case Get(p,k)  -> m§*$_{\code{Get}}$*§
+  case Put(p,k)  -> m§*$_{\code{Put}}$*§
+  case Return(x) -> m§*$_{\code{Return}}$*§
 }
 \end{lstlisting}
-The inferred type for the open handler \code{h} is more complex than its closed counterpart:
-\[ \code{h} : (() \xrightarrow{ \{ \type{Op}_i: a_i \to b_i \; | \; \rho\}\; } c) \to () \xrightarrow{ \{ \type{Op}_i: \alpha_i \; | \; \rho\}\;} d\]
-Notice that the effect row of the input computation is \emph{polymorphic} as signified by the presence of the row variable $\rho$. Accordingly, the input computation may perform more operations than the handler handles. The output type of an open handler looks very similar to its input type. The input as well as the output is a thunk. Moreover, their effect rows share the same polymorphic row variable $\rho$. But their operation signatures differ. The polymorphic variable $\alpha_i$ denotes that the $i$'th operation may be present or absent from the effect row.
+The type of the open handler \code{h$_1$} is more complex than its closed counterpart:
+\[ \code{h} : (() \xrightarrow{ \{ \type{Get}: a_1 \to a_2, \type{Put}: a_3 \to a_4 \; | \; \rho\}\; } b) \to () \xrightarrow{ \{ \type{Get}: \theta_1, \type{Put}: \theta_2 \; | \; \rho\}\;} c \]
+Notice that the effect row of the input computation is \emph{polymorphic} as signified by the presence of the row variable $\rho$. Accordingly, the input computation may perform more operations than the handler handles. The output type of an open handler looks very similar to its input type. The input as well as the output is a thunk. Moreover, their effect rows share the same polymorphic row variable $\rho$. But their operation signatures differ. The operations in the output effect row are polymorphic over their presence.
 
-Since the input type and output type of open handlers match we can compose open handlers seamlessly. The order of composition implicitly defines a stack of handlers. For example the composition of three handlers $(h_1 \circ h_2 \circ h_3)(m)$ applied to some computation $m$ defines a stack where $h_3$ is the top-most element. Thus the handler stack is built outside in. The ordering inside the stack determines which handler is invoked when $m$ discharges an operation. First the top-most handler is invoked, and if it cannot handle the discharged operation then the operation is forwarded to the second top-most handler and so forth.
+\subsection{Composing handlers}
+It is no coincidence that the input type and output type of open handlers are both thunks. Both types are compatible with the notion of computation for handlers. Therefore, we can compose open handlers seamlessly.
+For example, imagine a handler $h_2$ whose signature is
+\[ h_2 : (() \xrightarrow{ \{ \type{Choose}: a_1' \to a_2' | \; \rho' \}\; } b') \to () \xrightarrow{ \{ \type{Choose}: \theta_3 \; | \; \rho' \}\;} c' \]
+The composition $(h_2 \circ h_1)(m)$ gives rise to the following equation
+\[ \{ \type{Choose}: a_1' \to a_2' | \; \rho' \}\sim \{\type{Get}: \theta_1, \type{Put}: \theta_2 \; | \; \rho\} \]
+which has the following solution
+\[ \{ \type{Choose}: a_1' \to a_2', \type{Get}: \theta_1, \type{Put}: \theta_2 \; | \; \rho'\} \]
+The solution encompasses the three fields, where \code{Get} and \code{Put} remains polymorphic in their presence unless they are discharged by either handler. It is worth to emphasis that the row variable $\rho'$ is shared by the input and output effect row. The implication is that the additional operation names are propagated throughout composition. Hence $(h_2 \circ h_1)(m)$ ultimately yields a computation with type
+\[ () \xrightarrow{ \{ \type{Get}: \theta_1, \type{Put}: \theta_2, \type{Choose}: \theta_3 | \; \rho' \}\; } b' \]
+This is under the assumption that neither handler discharges any of the operations, otherwise the said operations would have to be \emph{present} in the effect row.
+To see why the operations are presence polymorphic in the output effect row, consider a closed handler $h_3 : (() \to b') \to b'$ then the composition $(h_3 \circ h_2 \circ h_1)(m)$ gives rise to the equation
+\[ \emptyset \sim \{ \type{Get}: \theta_1, \type{Put}: \theta_2, \type{Choose}: \theta_3 \; | \; \rho'\} \]
+Since we cannot shrink rows, there can only be one solution which is
+\[ \{ \type{Get}: abs, \type{Put}: abs, \type{Choose}: abs \} \]
+If the operations were not presence polymorphic then we would not be have to compose an open handler with a closed handler.
 
-Consequently, the order of composition may affect the semantics, say, $h_1$ and $h_2$ interpret the same operation differently, then, $h_1 \circ h_2$ and $h_2 \circ h_1$ potentially yield different results.
+\subsubsection{Implicit handler stack}
+The order of composition implicitly defines a stack of handlers. For example the composition of three handlers $(g_1 \circ g_2 \circ g_3)(m)$ applied to some computation $m$ defines a stack where $g_3$ is the top-most element. Thus the handler stack is built outside in. When an operation is discharged in $m$ the runtime system unwinds the handler stack to find a suitable candidate to handle the operation. The composition order determines the order in which handlers are invoked. First the top-most handler is invoked, and if it cannot handle the discharged operation then the operation is forwarded to the second top-most handler and so forth.
 
-The composition of open handlers is itself an open handler, thus it will return a thunk itself. For example $(h_1 \circ h_2 \circ h_3)(m)$ yield some nullary function $() \to a$ which we must explicitly invoke to obtain the result of the computation $m$. To avoid this extra invocation recall the \code{force} handler from Section \ref{sec:transform}. We can apply the closed handler \code{force} to obtain the result of $m$ directly, e.g. $(\code{force} \circ h_1 \circ h_2 \circ h_3)(m)$ yields a result of type $a$ immediately.
+Consequently, the order of composition may affect the semantics, say, $g_1$ and $g_2$ interpret the same operation differently, then, $g_1 \circ g_2$ and $g_2 \circ g_1$ potentially yield different results. In other words composition is not a commutative.
+
+The result of an application of some open handler to some computation is itself a computation. For example $(g_1 \circ g_2 \circ g_3)(m)$ yield some nullary function $() \to a$ which we must invoke to obtain the result of the computation $m$. In order to avoid this extra invocation recall the \code{force} handler from Section \ref{sec:transform}. We may compose \code{force} with the open handlers to obtain the result of $m$ directly, e.g. $(\code{force} \circ g_1 \circ g_2 \circ g_3)(m)$ yields a value with type $a$ immediately.
 
 \subsection{An effectful coffee dispenser in Links}
 In Section \ref{sec:problem-with-monads} and \ref{sec:mt} we implemented a model of a coffee dispenser in Haskell using monads (Examples \ref{ex:coffee1} and \ref{ex:coffee2}). However, it was difficult to extend the model to include more properties like writing to a display and system failures without resorting to Monad Transformers due to regular monads' lack of compositionality.
 
-In contrast, the modularity and compositionality afforded by (open) handlers enable us to easily implement a the a highly modular coffee dispenser model in Links. Example \ref{ex:coffee-links} implements the model. % and Example \ref{ex:coffee-links2} demonstrates how the modularity and compositionality of handlers extend the model without breaking a sweat.
+In contrast, the modularity and compositionality afforded by (open) handlers enable us to easily implement a highly modular coffee dispenser model in Links. Example \ref{ex:coffee-links} implements the model.
 \begin{example}[Coffee dispenser]\label{ex:coffee-links}
 The coffee dispenser performs two operations directly
 \begin{enumerate}
-  \item \type{Ask}: Retrieves the inventory.
-  \item \type{Tell}: Writes a description of an item to some medium.
+  \item $\type{Ask} () \to \type{Inventory}$ retrieves the inventory.
+  \item $\type{Tell}: \type{Dispensable} \to \type{String}$ writes a description of an item to some medium.
 \end{enumerate}
 Indirectly, the coffee dispenser may perform the \type{Fail} operation when it looks up an item. Thus the type of the dispenser is 
-\[ \code{dispenser} : a \xrightarrow{\{\type{Ask}:() \to [(a, b)], \type{Fail}:() \to b,\type{Tell}:b \to c| \rho\}\;} c \]
+\[ \code{dispenser} : \type{Int} \xrightarrow{\{\type{Ask}:() \to \type{Inventory}, \type{Fail}:() \to a,\type{Tell}:\type{Dispensable} \to \type{String} \; | \; \rho\}\;} \type{String} \]
 We compose the coffee dispenser from the aforementioned operations and the look-up function, e.g.
 \begin{lstlisting}[style=links]
 fun dispenser(n) {
@@ -39,7 +58,7 @@ fun dispenser(n) {
 }
 \end{lstlisting}
 The monadic coffee dispenser model used three monads: \type{Reader}, \type{Writer} and \type{Maybe} to model the desired behaviour. We will implement three handlers which resemble the monads. First, let us implement \type{Reader}-monad as the handler \code{reader} whose type is 
-\[  (() \xrightarrow{\{\type{Ask}:(a) \to [(\type{Int}, [|\type{Coffee}|\type{Tea}|\rho_1|])] \, | \,\rho_2\}\;} b) \to () \xrightarrow{\{\type{Ask}:\alpha|\rho_2\}\;} b \]
+\[  (() \xrightarrow{\{\type{Ask}:a \to \type{Inventory} \; | \;\rho\}\;} b) \to () \xrightarrow{\{\type{Ask}:\theta \; | \; \rho\}\;} b \]
 For simplicity we hard-code the inventory into the handler
 \begin{lstlisting}[style=links]
 open handler reader(m) {
@@ -50,7 +69,7 @@ open handler reader(m) {
 When handling the operation \type{Ask} the handler simply invokes the continuation \code{k} with the inventory as parameter. Like in Example \ref{ex:coffee1} we model the inventory as an association list.
 
 Secondly, we implement the handler \code{writer} which provide capabilities to write to a medium. We let the medium be a regular string. The handler's type is
-\[  (() \xrightarrow{\{\type{Tell}: [|\type{Coffee}|\type{Tea}|] \to \type{String} \, | \,\rho\}\;} a) \to () \xrightarrow{\{\type{Tell}:\alpha|\rho_2\}\;} a \]
+\[  (() \xrightarrow{\{\type{Tell}: \type{Dispensable} \to \type{String} \, | \,\rho\}\;} a) \to () \xrightarrow{\{\type{Tell}:\theta \; | \; \rho\}\;} a \]
 and its definition is
 \begin{lstlisting}[style=links]
 open handler writer(m) {
@@ -61,17 +80,8 @@ open handler writer(m) {
 \end{lstlisting}
 Here we use pattern-matching to convert \type{Coffee} and \type{Tea} into their respective string representations.
 
-Finally, we implement the \code{lookup} function which given a key and an association list returns the element associated with the key if the key exists in the list, otherwise it discharges the \type{Fail}-operation to signal failure
-\begin{lstlisting}[style=links]
-fun lookup(n, xs) {
-  switch (xs) {
-    case [] -> do Fail()
-    case ((k, e) :: xs) -> if (n == k) { e }
-                          else { lookup(n, xs) }
-  }
-}
-\end{lstlisting}
-To handle failure we reuse the \type{maybe}-handler from Section \ref{sec:maybehandler} with the slight change that we make it an open handler. Now, we just have to glue all the components together
+Finally, the \code{lookup} function traverses an association list in order to find the element associated with the given key. If the key exists, then the element is returned, otherwise the \code{Fail} operation is discharged to signal failure. We will not show its implementation here.
+To handle failure we reuse the \type{maybe}-handler from Section \ref{sec:maybehandler} with the slight change that we make it an open handler. Now, we can glue the components together:
 \begin{lstlisting}[style=links]
 fun runDispenser(n) {
   force(maybe(writer(reader(fun() { dispenser(n) }))))
