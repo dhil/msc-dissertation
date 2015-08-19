@@ -349,7 +349,7 @@
 }
 
 @book{Pierce2002,
- author = {Pierce, Benjamin C.},
+ author = {Benjamin C. Pierce},
  title = {Types and Programming Languages},
  year = {2002},
  isbn = {0-262-16209-1},

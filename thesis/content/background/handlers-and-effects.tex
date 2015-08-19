@@ -1,14 +1,14 @@
 \section{Handlers and algebraic effects}\label{sec:handlers-and-effects}
-Algebraic effects and handlers have their foundation in category theory \cite{Plotkin2001a,Plotkin2013}. Plotkin and Power \cite{Plotkin2001b,Plotkin2001a} gave a categorical treatment of algebraic effects. The term ``algebraic'' implies that an effect ought to have an equational theory, however we consider only free algebras, that is our theories are equationless. Therefore we will not delve into the theoretical foundations of algebraic effects and handlers, rather we will take a more practical approach. Moreover, we will use the terms algebraic effect and effect interchangeably.
+Algebraic effects and handlers have their foundation in category theory \cite{Plotkin2001a,Plotkin2013}. Plotkin and Power \cite{Plotkin2001b,Plotkin2001a} gave a categorical treatment of algebraic effects. The term ``algebraic'' implies that an effect ought to have an equational theory, however we consider only free algebras, that is our theories are equationless. Therefore we will not delve into the theoretical foundations of algebraic effects and handlers, rather we will take a more pragmatic approach. Moreover, we will use the terms algebraic effect and effect interchangeably.
 
-\subsection{Algebraic effect}
+\subsection{Algebraic effects}
 An algebraic effect is a collection of operation signatures \cite{Lindley2014}. For example, we might define an algebraic effect \type{Choice} for making a boolean choice with the following signature:
 \[ \type{Choice} \defas \{ \type{Choose}: () \to \type{Bool} \} \]
 Here \type{Choose} is a nullary operation whose return type is boolean. The effect \type{Choice} is the singleton set whose only member is \type{Choose}. 
 
 The operation \type{Choose} is abstract, that is it has no concrete implementation. We say that computations composed from algebraic effects are \emph{abstract computations}. Without handlers abstract computations are meaningless as handlers faithfully interpret effects by instantiating them with concrete implementations. 
 
-\subsection{Effect handler}
+\subsection{Effect handlers}
 Benton and Kennedy generalised exception handlers \cite{Benton2001} (as known from SML, C\#, Java, etc) to expose a continuation to the programmer in the case no exceptions occurred during the handled context. Later their work was adapted by Plotkin and Pretnar \cite{Plotkin2013} to handle arbitrary effects, thus they coined the notion of handlers for algebraic effects.
 
 Intuitively, an effect handler is a generalised function which takes an abstract computation as input, and embodies a collection of cases for pattern matching on operations that may be discharged during the evaluation of the input computation.

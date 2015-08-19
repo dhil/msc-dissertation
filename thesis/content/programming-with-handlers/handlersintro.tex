@@ -1,7 +1,7 @@
 \chapter{Programming with handlers in Links}\label{ch:programming-with-handlers}
 Through a series of examples we will explore programming with two types of effect handlers in Links. Section \ref{sec:closedhandlers} introduces \emph{closed handlers} and in particular emphasises the high degree of modularity afforded by closed handlers. Section \ref{sec:openhandlers} introduces the slightly more generalised \emph{open handlers} and focuses mainly on the compositionality of (open) handlers.
 
-\section{Discharging operations in Links}\label{sec:discharge}
+\section{Discharging operations}\label{sec:discharge}
 Syntactically, operations are similar to variants in Links. Every operation name starts with a capital letter, e.g. \type{Get}, \type{Put}, etc. Every operation takes an input and yields an output. The output from discharging an operation is entirely decided by effect handlers in the evaluation context. That is, alone an operation does not have any semantics.
 
 Operations are discharged using the \code{do}-primitive. However discharging an operation in an unhandled context yields an evaluation error:
