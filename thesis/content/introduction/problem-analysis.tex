@@ -10,18 +10,23 @@ The Haskell programming language is also explicit about effects, but, in contras
 %However monads are not flawless.
 
 \subsection{Benefits of being explicit about effects}
-An effect conveys additional information about what might happen during evaluation of a computation. This information may be used by an optimising compiler transform the computation into an equivalent, more efficient computation. For example, fine-grained effects can tell us precisely when it is safe to reuse a particular piece of code \cite{Kammar2012}. Moreover, the additional information can aid in verification of the code up-front \cite{Brady2013}.
+An effect is a static description of the possible state-changing actions that a computation might perform. Types and effects are complementary, together they characterise computations. A type determines the possible outputs of a computation and an effect conveys information about what might happen during evaluation. This information may be exploited by an optimising compiler to transform a computation into an equivalent, more efficient computation. For example, fine-grained effects can tell us precisely when it is safe to reuse a particular piece of code \cite{Kammar2012}, run it parallel, etc. Moreover, effects endow additional safety as they can aid in verification of programs up-front \cite{Brady2013}.
 
-Finally, explicit effects provide additional documentation to the programmer about the code. As a result thereof the programmer gain better insight into what the computation actually \emph{does} without breaking the abstraction.
+Finally, explicit effects provide additional documentation to the programmer about the code. As a result the programmer gain better insight into what the computation actually \emph{does} without breaking the abstraction.
 
 \subsection{A monadic effectful coffee dispenser}\label{sec:problem-with-monads}
-Monads are powerful abstractions for structuring computations as long as we are working inside the same monad. 
-Because, sadly, monads are do not compose well \cite{Kammar2013}, and consequently it is difficult to give a monadic description of computations that might perform multiple effects.
+Monads are powerful abstractions for structuring computations. In particular, monads have a simple interface. For instance in Haskell programmers often only need to concern themselves with the following two monadic operators:
+\begin{itemize}
+  \item Bind operator (\code{>>=}), whose type is $m \, a \to (a \to m\, b) \to m \, b$, takes a monadic value of type $m \, a$ and a function, which is applied to the value inside the monad to yield a monadic value of type $m \, b$.
+  \item Pure operator (\code{return}), which has type $a \to m \, a$, lifts a pure value of type $a$ into a monadic value of type $m \, a$.
+\end{itemize}
+Monads combine using the bind operator, which works well as long as we are working inside the same monad. 
+Because, sadly, monads do not compose well \cite{Kammar2013}, and consequently it is difficult to give a monadic description of computations that might perform multiple effects.
 Consider the following attempt at modelling a coffee dispenser in Haskell:
 \begin{example}[Coffee dispenser using monads]\label{ex:coffee1}
-The coffee dispenser is effectful, that is, it reacts to user input and may fail. Furthermore, we want to be explicit about the effects that the dispenser may cause. 
+The coffee dispenser is effectful, that is, it reacts to user input and may fail. Furthermore, we want to be explicit about the effects that the dispenser may perform. 
 
-First we define the sum type \type{Dispensable} which has two labels: \type{Coffee} and \type{Tea}. They represent the two items that the coffee machine can dispense.
+First we define the sum type \type{Dispensable} with two labels \type{Coffee} and \type{Tea} which represents dispensable drinks:
 \begin{lstlisting}[style={haskell}]
 data Dispensable = Coffee | Tea deriving Show
 
@@ -29,7 +34,7 @@ type ItemCode  = Integer
 type Inventory = [(ItemCode,Dispensable)]
 inventory = [(1,Coffee),(2,Tea)]
 \end{lstlisting}
-The \type{ItemCode} type models a button on the coffee machine, and \type{Inventory} associates buttons with dispensable items. The \code{inventory} will not change during run-time. We can capture this property in the effect signature by encapsulating the \code{inventory} inside a \type{Reader}-monad. Furthermore, we use the \type{Maybe}-type to capture the possibility of failure, e.g.
+The \type{ItemCode} type models a button on the coffee machine, and \type{Inventory} associates buttons with dispensable items. The \code{inventory} will not change during runtime. We can capture this property in the effect signature by encapsulating the \code{inventory} inside a \type{Reader}-monad. Furthermore, we use the \type{Maybe}-type to capture the possibility of failure, e.g.
 \begin{lstlisting}[style={haskell}]
 dispenser :: ItemCode -> Reader Inventory (Maybe Dispensable)
 dispenser n = do inv <- ask
@@ -37,40 +42,61 @@ dispenser n = do inv <- ask
                  return item
 \end{lstlisting}
 The type \type{Reader Inventory (Maybe Dispensable)} tells us that \code{dispenser} accesses a read-only instance of \type{Inventory} and maybe returns an instance of \type{Dispensable}. The \type{Maybe}-type tell us that in the event of an error we get \code{Nothing}, for instance if the user requests an item that is not in the inventory, otherwise we get \code{Just} the requested item.
-The monadic operation \code{ask} retrieves the inventory from the \type{Reader}-monad and \code{lookup} checks whether the item \code{n} is in the inventory.  
-
-Although, \code{Maybe} is a monad we cannot use its monadic interface, because we are in the context of the \code{Reader}-monad. For this simple computation it is not an issue, but it would be desirable to be able to use the failure handling capabilities of the \code{Maybe}-monad.
+The monadic operation \code{ask} retrieves the inventory from inside the \type{Reader}-monad and \code{lookup} checks whether the item \code{n} is in the inventory.  
 \end{example}
-Imagine that we want log when tea or coffee is being dispensed. The \type{Writer}-monad provide such capabilities. It is not immediately clear how we can integrate \type{Writer} with our model. Ideally, we would want  a monadic computation like:
+Although, \code{Maybe} is a monad we cannot use its monadic interface, because we are in the context of the \code{Reader}-monad. For this simple computation it is not an issue, but it would be desirable to be able to use the failure handling capabilities of the \code{Maybe}-monad. Ideally, we would want to be able to write
+\begin{lstlisting}[style={haskell}]
+do inv  <- ask
+   item <- lookup n inv
+   return item
+\end{lstlisting}
+But using regular monads it is not possible to construct this type. To see why, let us desugar the above expression:
+\begin{figure*}[h]
+\centering
+\begin{subfigure}[c]{0.40\linewidth}
+\begin{lstlisting}[style={haskell}]
+do inv  <- ask
+   item <- lookup n inv
+   return item
+\end{lstlisting}
+\end{subfigure}
+~
+\begin{subfigure}[c]{0.1\linewidth}
+$\Rightarrow$
+\end{subfigure}
+~
+\begin{subfigure}[c]{0.40\linewidth}
+\centering
+\begin{lstlisting}[style={haskell}]
+ask >>= \inv -> 
+  lookup n inv >>= \item ->
+      return item
+\end{lstlisting}
+\end{subfigure}
+\end{figure*}
+
+The bind operator (\code{>>=}) is the problem. Recall its type
+\[ \type{Monad}\; m \Rightarrow m\, a \to (a \to m\, b) \to m\, b \]
+Essentially, this type tells us that we cannot compose monads of different types as the monad type $m$ is fixed throughout the computation. Consequently, it is not immediately clear how we may extend the coffee dispenser model with additional capabilities such as logging.
+
+Suppose we want log when tea or coffee is being dispensed. The \type{Writer}-monad provide such capabilities. Ideally, we would want a monadic computation like:
 \begin{lstlisting}[style={haskell}]
 do inv  <- ask
    item <- lookup n inv
    tell (show item)
    return item
 \end{lstlisting}
-Here the monadic operation \code{tell} writes to the medium contained in the \type{Writer}-monad.
-However, this code does not type check. A moment's thought reveals that using just monads there is no way to construct a type for that expression. The type we want is something like
+Here the monadic operation \code{tell} writes to the medium contained in the \type{Writer}-monad. However as noted above we cannot achieve this using regular monads. Basically, we want a monad whose type is something like
 \[ \type{Writer w $\square$ Reader e $\square$ Maybe Dispensable} \]
-where \type{w} is the type of the writable medium, \type{e} is the type of an environment and $\square$ is some ``type-glue'' that joins the types together. This type is exactly a Monad Transformer type which we discuss in Section \ref{sec:mt}. But using regular monads it is not possible to construct this type. Let us desugar the above expression to see why:
-\begin{lstlisting}[style={haskell}]
-ask >>= \inv -> 
-  lookup n inv >>= \item -> 
-    tell . show $$ item 
-      >> return item
-\end{lstlisting}
-The bind operator (\code{>>=}) is the problem as its type is
-\[ \type{Monad m $\Rightarrow$ m a $\to$ (a $\to$ m b) $\to$ m b} \]
-Essentially, this type tells us that we cannot compose monads of different types as the monad type \type{m} is fixed throughout the computation. Thus we see that monads lack compositionality and modularity in general.
+where \type{w} is the type of the writable medium, \type{e} is the type of an environment and $\square$ is some ``type-glue'' that joins the types together. This type is an instance of Monad Transformer type which we will discuss in Section \ref{sec:mt}. 
 
 \subsubsection{Effect granularity}%The IO monad is like a calzone pizza.
-It is possible to solve the problem using regular monads. However, it comes at a cost as suggested by the type signature of the bind operator we can compose one monad with another as long as they got the same monadic type. So, we could just use one monadic type to describe all effects. It is very tempting to bake everything into an \type{IO}-monad as we possibly want to I/O capabilities at some point. Albeit, \type{IO} is a very conservative estimate on which effects our computation might perform. Consequently, we get coarse-grained effect signatures as opposed to more specific, fine-grained effect signatures.
+It is possible to solve the problem using regular monads. However, it comes at a cost as suggested by the type signature of the bind operator we can compose one monad with another as long as they got the same monadic type. So, we could just use one monadic type to describe all effects. It is very tempting to bake everything into an \type{IO}-monad as we possibly want to I/O capabilities at some point. Albeit, \type{IO} is a very conservative estimate on which effects our computation might perform. Consequently, we obtain coarse-grained effect signatures as opposed to more specific, fine-grained effect signatures.
 
 \subsection{A better monadic effectful coffee dispenser}\label{sec:mt}
-% Possibly reformulate this paragraph as it's copied from my IRP
-Monad Transformers allow two monads to be combined by stacking one on top of the other. 
-Furthermore, a Monad Transformer is itself a monad, and thus we can create arbitrarily complex compositions.
-Incidentally, Monad Transformers can capture computations that may cause several different effects.
-% End of IRP phrase
+Monad Transformers enable us to combine two different monads by stacking one on top of the other.
+In particular, any Monad Transformer is itself a monad, and hence we can construct arbitrarily complex compositions.
+Incidentally, we can use Monad Transformers to describe computations that may perform several different effects.
 The following example rewrites the coffee dispenser model from Example \ref{ex:coffee1} using Monad Transformers.
 \begin{example}[Coffee dispenser using Monad Transformers]\label{ex:coffee2}
 Most monads have a Monad Transformer cousin; by convention Monad Transformers have a capital T suffix, e.g. the \type{Reader}-monad's transformer is named \type{ReaderT}.
@@ -92,7 +118,7 @@ The type may look dubious. Basically, we have built a Monad Transformer stack wi
   \item Middle: \type{ReaderT} with read access to an environment of type \type{Inventory}.
   \item Bottom: \type{Maybe} provides exception handling capabilities.
 \end{itemize}
-Monad Transformers allow us to express something reminiscent of the monadic computation we sought in Example \ref{ex:coffee1}. It is worth noting that we now use \type{Maybe} as a monad as opposed to a ordinary value. The benefits are obvious as we get the exception handling capabilities of \type{Maybe} for ``free''.
+Monad Transformers allow us to express something reminiscent of the ``ideal'' monadic computation that we sought after in Section \ref{sec:problem-with-monads}. It is worth noting that, now,  \type{Maybe} is employed as a monad as opposed to a ordinary type. The benefits are obvious as we get the exception handling capabilities of \type{Maybe} for ``free''.
 
 However, it is not entirely free as we have to introduce \code{lift} operations. The \code{lift} operations are necessary in order to work with a specific effect down the transformer stack. For example in order to use \code{ask} we have to \code{lift} once as the \type{ReaderT} is the second type in the stack. Moreover, to use the monadic capabilities of \type{Maybe} we have to \code{lift} twice because it is at the bottom of the stack. Using \code{tell} requires no \code{lift}s in this example as \type{WriterT} is the top type. 
 Consider what happens when we add yet another monad to the stack:
