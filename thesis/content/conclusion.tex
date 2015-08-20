@@ -1,7 +1,12 @@
 \chapter{Conclusion and future work}\label{ch:conclusion}
-In Section \ref{sec:problem-statement} we asked whether we could achieve an effectful programming model in which compositionality and modularity coexist. We proposed Plotkin and Pretnar's handlers for algebraic effects \cite{Plotkin2013} with the addition of row polymorphism. Through a series of examples in Chapter \ref{ch:programming-with-handlers} we demonstrated that the resulting programming model indeeds achieve a high-degree of modularity. Furthermore, due to our design of computations as thunks and row polymorphism we were able to achieve compositionality for open handlers. Compositionality for handlers adds additional flexible as individual program parts can be developed independently of each other.
+In Section \ref{sec:problem-statement} we asked whether we could achieve an effectful programming model in which compositionality and modularity coexist. We proposed to use Plotkin and Pretnar's handlers for algebraic effects \cite{Plotkin2013} with the addition of row polymorphism as a basis for effectful programming. 
 
-Row polymorphism eliminates the effect ordering issue altogether. As a result it becomes easy to write reusable code.
+In order to be able to examine the programming model, we implemented it in Links, taking advantage of Links' row-based effect system. As a result Links now has first-class handlers and user-defined effects.
+Through a series of examples in Chapter \ref{ch:programming-with-handlers} we demonstrated that the programming model indeeds achieve a high-degree of modularity. Furthermore, due to our design of computations as thunks and row polymorphism we were able to achieve compositionality for open handlers. Composable handlers give additional flexibility as individual, specialised program parts can be developed independently of each other.
+
+We find that row polymorphism eliminates the effect ordering issue altogether. As a result it becomes easy to write reusable effectful code.
+
+Performance-wise our handlers are terrible. This is mainly due to the code being interpreted unoptimised. To make programming with handlers practical in Links 
 
 \section{Future work}
 Closed and open handlers provide a fine basis, however there are several interesting generalisation to consider such as parameterisable and shallow handlers. 
