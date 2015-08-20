@@ -9,7 +9,7 @@ Here \type{Choose} is a nullary operation whose return type is boolean. The effe
 The operation \type{Choose} is abstract, that is, it has no concrete implementation. We say that computations composed from algebraic effects are \emph{abstract computations}. Without handlers abstract computations are meaningless as handlers faithfully interpret effects by instantiating them with concrete implementations. 
 
 \subsection{Effect handlers}
-Benton and Kennedy generalised exception handlers \cite{Benton2001} (as known from SML, C\#, Java, etc) to expose a continuation to the programmer. Later their work was adapted by Plotkin and Pretnar \cite{Plotkin2013} to include arbitrary effects, and thus they coined the notion of handlers for algebraic effects.
+Benton and Kennedy generalised exception handlers \cite{Benton2001} (as known from SML, C\#, Java, etc) to expose a continuation to the programmer. Later their work was adapted by Plotkin and Pretnar \cite{Plotkin2013} to include arbitrary effects, thus they pioneered handlers for algebraic effects.
 
 Intuitively, an effect handler is a generalised function which takes an abstract computation as input, and interprets the operations that may be discharged during evaluation of the computation. 
 

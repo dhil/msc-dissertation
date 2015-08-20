@@ -555,6 +555,10 @@ Computer Science}}
 
 \newenvironment{declaration}
    {\renewcommand{\abstractname}{Declaration}\begin{mainabs}}
+   {\end{mainabs}\renewcommand{\abstractname}{Abstract}}
+
+\newenvironment{preface}
+   {\renewcommand{\abstractname}{Preface}\begin{mainabs}}
    {\end{mainabs}\renewcommand{\abstractname}{Abstract}}   
 
 \newcommand{\standarddeclaration}{

@@ -117,7 +117,13 @@ sorting=nyt
 
 %% Specify the abstract here.
 \abstract{%
-    An abstract appears here\dots
+Plotkin and Pretnar's handlers for algebraic effects provide a compelling alternative to monads as a basis for effectful programming. In their programming model computations are composed from abstract operations. Handlers interpret abstract operations by instantiating them with concrete implementations. Consequently, the model promises a high degree of modularity.
+
+We provide an implementation of handlers for algebraic effects using \emph{row polymorphism} in the strict functional programming language Links. Row polymorphism enable us to truly compose computations from operations in any order.
+
+Through a series of examples we demonstrate that the handler abstraction makes it easy to write modular, effectful programs. Furthermore, we show that the compositionality of handlers enable of us to extend the functionality of effectful programs effortlessly.
+
+Finally, we also include a discussion of our implementation as well as an evaluation of our programming model, how handlers and effects fit into the Links language, and an account of the performance of handlers.
 }
 
 %% Now we start with the actual document.
@@ -133,7 +139,7 @@ sorting=nyt
 \begin{acknowledgements}
 I would like to extend my sincere gratitude to my supervisor \href{http://homepages.inf.ed.ac.uk/slindley/}{Sam Lindley}. Firstly, for accepting me as his student, and secondly, for introducing to the subject. Sam has provided invaluable guidance during the entire project period. We have enjoyed many conversations about programming language theory over the summer.
 
-I would also like to thank \href{https://www.cs.st-andrews.ac.uk/directory/person?id=eb}{Edwin Brady} for inviting me to attend and deliver a talk about my work during the \emph{Practical Types 2015}, summer school at the University of St. Andrews. It gave me an opportunity to receive some valuable early feedback on the write-up.
+I would also like to thank \href{https://www.cs.st-andrews.ac.uk/directory/person?id=eb}{Edwin Brady} for inviting me to attend and deliver a talk about my work during the \emph{Practical Types 2015}, summer school at the University of St. Andrews. It gave me an opportunity to receive some valuable feedback on my work.
 
 Finally, thanks to \href{http://homepages.inf.ed.ac.uk/jrl/}{John Longley}, \href{http://homepages.inf.ed.ac.uk/dcspaul/homepage/live/work/index.html}{Paul Anderson}, and \href{http://homepages.inf.ed.ac.uk/slindley/}{Sam Lindley} for their feedback during the midterm MSc progress seminar.
 \end{acknowledgements}
@@ -143,14 +149,18 @@ Finally, thanks to \href{http://homepages.inf.ed.ac.uk/jrl/}{John Longley}, \hre
 
 %% Finally, a dedication (this is optional -- uncomment the following line if
 %% you want one).
-% \dedication{To my mummy.}
+%\dedication{To my mummy.}
+
+\begin{preface}
+This report contains a variety of examples. Some of the examples elide aesthetic details to condense the code. The complete source code for every example, including instructions, is available at \url{https://github.com/dhil/msc-dissertation}. The repository also contains additional examples that are not presented in this report. Furthermore, the source code for the handlers implementation in Links is available at \url{https://github.com/dhil/links-effect-handlers}.
+\end{preface}
 
 %% Create the table of contents
 \setcounter{secnumdepth}{2} % Numbering on sections and subsections
 \setcounter{tocdepth}{1} % Show only chapters and sections
-\singlespace
+%\singlespace
 \tableofcontents
-\doublespace
+%\doublespace
 
 %% If you want a list of figures or tables, uncomment the appropriate line(s)
 % \listoffigures
