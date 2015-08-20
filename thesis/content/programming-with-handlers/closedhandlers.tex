@@ -7,7 +7,7 @@ handler h(m) {
   case Return(x) -> §*$m_{\code{Return}}$*§
 }
 \end{lstlisting}
-The above is an example handler \code{h} that handles two operations \code{Get} and \code{Put}.
+The above defines a handler \code{h} that handles two operations \code{Get} and \code{Put}.
 In the previous section we said that every operation takes exactly one argument, yet, an operation case matches on two parameters. The first parameter \code{p} is the operation argument, whilst the second parameter \code{k} exposes a delimited continuation that accepts a single parameter. Invocation of the continuation transfers control back to the handled computation \code{m} at the point where the said operation was discharged. Both parameters may be referenced multiple times in their respective case-computation $m_{\code{Get}}$ or $m_{\code{Put}}$.
 There may be a variable number of operation-cases, however, there must be at least one \code{Return}-case in every handler. The \code{Return}-case is a special case that is implicitly invoked when the handled computation \code{m} finishes. The purpose of \code{Return} is discussed in Section \ref{sec:transform}.
 
@@ -19,7 +19,7 @@ A closed handler handles a fixed set of effects, that is, it puts an upper bound
 where $b$ is the return type of the computation \code{m}, and $c$ is the type of $m_{\code{Return}}$, $m_{\code{Get}}$ and $m_{\code{Put}}$.
 The absence of a row variable in the effect signature implies that the computation \code{m} may not perform any other effects than \type{Get} and \type{Put}. It is considered a type error to attempt to handle a computation whose effect signature is not unifiable with the effect signature of \code{m}.
 
-This restriction introduces slack into the type system \cite{Huttel2010}. To illustrate the slack consider the following computation
+This restriction introduces slack into the type system \cite{Huttel2010}. To illustrate the slack consider the following computation:
 \begin{lstlisting}[style=links]
 fun comp() {
   s = do Get();
@@ -63,7 +63,7 @@ The \code{force} handler's effect row implicitly contains the \code{wild} effect
 
 The next example demonstrates an actual transformation.
 \begin{example}[The listify handler]\label{ex:listify}
-The \code{listify} handler transforms the result of a handled computation into a singleton list. Its type is $ (() \to a) \to [a]$ and its definition is straightforward
+The \code{listify} handler transforms the result of a handled computation into a singleton list. Its type is $ (() \to a) \to [a]$ and its definition is straightforward:
 \begin{lstlisting}[style=links]
 handler listify(m) {
   case Return(x) -> [x]
@@ -78,10 +78,10 @@ links> listify(hello);
 links> listify(fun() { [1,2,3] });
 [[1,2,3]] : [[Int]]
 \end{lstlisting}
-This example also illustrates that the \code{Return}-case serves a similar purpose to the monadic \code{return}-function in Haskell whose type is $\code{return} : a \to m\, a$ for a monad $m$. It ``lifts'' a value into a monadic value, similarly, the \code{Return}-case lifts a value into a ``handled'' value.
+This example also illustrates that the \code{Return}-case serves a similar purpose to the monadic \code{return}-function in Haskell which lifts a value into a monadic value, similarly, the \code{Return}-case lifts a value into a ``handled'' value.
 \end{example}
 
-In a similar fashion to the handler \code{listify} in Example \ref{ex:listify} we can define handlers that increment results by 1, perform a complex calculation using the result of the computation or wholly ignore the result. However, it must ensure that the type of the output is compatible with the output type of the handler. In the case for \code{listify} the output must be a list of whatever the computation yielded.
+In a similar fashion to the handler \code{listify} in Example \ref{ex:listify} we can define handlers that increment results by 1, perform a complex calculation using the result of the computation, or wholly ignore the result. However, it must ensure that the type of the output is compatible with the output type of the handler. In the case for \code{listify} the output must be a list of whatever the computation yielded.
 
 \subsection{Exception handling}\label{sec:maybehandler}
 Until now we have only seen some simple transformations. Let us make things more interesting.
@@ -139,19 +139,18 @@ Just(true) : Maybe(Bool)
 In Section \ref{sec:effects-as-computation-trees} we visualised some interpretations the abstract computation
 \begin{lstlisting}[style=links]
 fun choice() {
-  if (do Choose()) {
-    if (do Choose()) { 2 }
-    else { 4 }
-  } else {
-    if (do Choose()) { 8 }
-    else { 16 }
+  var x = if (do Choose()) { 2 }
+          else { 4 };
+  var y = if (do Choose()) { 8 }
+          else { 16 };
+  y + x
 }
 \end{lstlisting}
 which uses the operation $\type{Choice} : () \to \type{Bool}$. For completeness we show how to implement these interpretations in Links. Example \ref{ex:positive} shows the positive interpretation and Example \ref{ex:enumerate} shows the enumeration interpretation.
-\begin{example}[The ``positive'' interpretation]\label{ex:positive}
+\begin{example}[The ``positive'' interpretation (Figure \ref{fig:positive})]\label{ex:positive}
 Whenever the operation \type{Choose} is discharged in the computation \code{choice} the handler has to decide whether to pick \code{true} or \code{false}. Therefore the type of the handler \code{positive} must be
 $(() \xrightarrow{\{\type{Choose}:() \to \type{Bool}\}\;} a) \to a$.
-The \code{positive} handler always picks \code{true}. To implement this behaviour, we invoke the continuation once with argument \code{true}. The value \code{true} becomes the concrete output of \code{do Choose} in the computation:
+The \code{positive} handler always picks \code{true}. To implement this behaviour, we invoke the continuation once with the argument \code{true}. The value \code{true} becomes the concrete output of \code{do Choose} in the computation:
 \begin{lstlisting}[style=links]
 handler positive(m) {
   case Choose(_,k) -> k(true)
@@ -161,12 +160,12 @@ handler positive(m) {
 Running the handler on the computation \code{choice} yields the expected result:
 \begin{lstlisting}[style=links]
 links> positive(choice);
-2 : Int
+10 : Int
 \end{lstlisting}
 The definition of the handler \code{negative} from Section \ref{sec:effects-as-computation-trees} is analogous to \code{positive}.
 \end{example}
 
-\begin{example}\label{ex:enumerate}
+\begin{example}[The enumeration handler (Figure \ref{fig:enumerate})]\label{ex:enumerate}
 The handler \code{enumerate} traverses the entire computation tree as shown in Figure \ref{fig:enumerate}. To encode this behaviour we will invoke the continuation twice: First with \code{true} and then with \code{false}. The results of both invocations have to be collected in a list. It is the job of \code{Return} to lift a single result into a list. Therefore the type of \code{enumerate} is 
 $(() \xrightarrow{\{\type{Choose}:() \to \type{Bool}\}\;} a) \to [a]$.
 The \code{Return}-case lifts a single element into a singleton list. Hence the two invocations of the continuation give us two lists which we can join together to form a single list, e.g.
@@ -179,19 +178,19 @@ handler enumerate(m) {
 Applying \code{enumerate} to the computation \code{choice} yields the result we arrived at in Section \ref{sec:effects-as-computation-trees}:
 \begin{lstlisting}[style=links]
 links> enumerate(choice);
-[2, 4, 8, 16] : [Int]
+[10, 18, 12, 20] : [Int]
 \end{lstlisting}
 \end{example}
 
 \subsection{Interpreting Nim}\label{sec:interpreting-nim}
-The in previous examples built intuition for how handlers work. In this section we will use the mathematical game Nim to demonstrate the power of modularity afforded by handlers. Nim is strategic game in which two players take turns to pick sticks from heaps on a table, and whoever takes the last stick wins.
+The previous examples built intuition for how handlers work. In this section we will use the mathematical game Nim to demonstrate the power of modularity afforded by handlers. Nim is a strategic game in which two players take turns to pick sticks from heaps on a table, and whoever takes the last stick wins.
 We will use a simplified version of Nim to demonstrate how handlers can give different interpretations of the same game. In our simplified version there is only one heap of $n$ sticks. Any player may only take between one and three sticks at a time. Furthermore, we name players: Alice and Bob, and Alice always starts. Our model is adapted from Kammar et. al \cite{Kammar2013}.
 
 We encode the players as the sum type $\type{Player} \defas [|\code{Alice}|\code{Bob}|]$ and model the game as two mutual recursive abstract computations, e.g.
 \begin{figure*}[h]
   \centering
   \begin{tabular}{ c | c }
-Alice plays & Bob plays \\
+When Alice plays  & When Bob plays \\
 \hline
     \begin{subfigure}[c]{0.51\linewidth}
 \begin{lstlisting}[style=links]
@@ -219,7 +218,7 @@ fun bobTurn(n) {
 \end{tabular}
 \end{figure*}
 
-The two computations are symmetrical. The input parameter \code{n} is the number of sticks left in the heap. First, Alice checks whether there are any sticks left, if there is not then she declares \type{Bob} the winner, otherwise she performs her move and then she gives the turn to Bob.
+The two computations are symmetrical. The input parameter \code{n} is the number of sticks left in the heap. First, Alice checks whether there are any sticks left, if the heap is empty then she declares \type{Bob} the winner, otherwise she performs her move and then she gives the turn to Bob.
 The game uses one abstract operation \code{Move} which has the type $\code{Move} : (\type{Player}, \type{Int}) \to \type{Int}$, i.e. it takes the current game configuration as input:
 \begin{enumerate}
   \item Who's turn it is,
@@ -227,7 +226,7 @@ The game uses one abstract operation \code{Move} which has the type $\code{Move}
 \end{enumerate} 
 The operation \code{Move} returns the number of sticks that the current player takes. At this point \code{Move} does not have a clear semantic interpretation. We only know that its range, the integers, is infinite, so $\code{take}$ may be assigned any integer value.
 The types of \code{aliceTurn} and \code{bobTurn} are
-\[ \type{Int} \xrightarrow{\{\type{Move}:(\type{Player},\type{Int}) \to \type{Int}\}\;} \type{Player} \]
+\[ (\type{Int}) \xrightarrow{\{\type{Move}:(\type{Player},\type{Int}) \to \type{Int} \; | \; \rho\}\;} \type{Player} \]
 Because it is an unary function it cannot be used as an input to any handler. We rectify the problem by using a closure, i.e. we wrap the game function inside a nullary function like \code{fun()$\{$aliceTurn(n)$\}$} where \code{n} is a free variable captured by the surrounding context.
 For conveniency, we define an auxiliary function \code{play} to abstract away these details. It takes as input a game handler \code{gh} and the number of sticks at the beginning of game \code{n}. Moreover, the function \code{play} enforces the rule that Alice always starts, e.g.
 \begin{lstlisting}[style=links]
@@ -237,17 +236,17 @@ fun play(gh, n) {
     })
 }
 \end{lstlisting}
-The following examples demonstrates how handlers encode the strategic behaviour of the players.
+The following examples demonstrates how to use handlers to encode the strategic behaviour of the players.
 \begin{example}[A naïve strategy]\label{ex:nim-naive}
 A very naïve strategy is to take only \emph{one} stick at every turn. We encode this behaviour by invoking the continuation with argument $1$. This assigns $1$ to \code{take} in \code{aliceTurn} or \code{bobTurn} depending on whom discharged \code{Move}.
-The implementation of the handler is straightforward
+The implementation of the handler is straightforward:
 \begin{lstlisting}[style=links]
 handler naive(m) {
   case Move(_,k) -> k(1)
   case Return(x) -> x
 }
 \end{lstlisting}
-The operation \code{Move} is handled uniformly, that is, independent current game configuration the handler always invokes the continuation \code{k} with 1.
+The operation \code{Move} is handled uniformly, that is, independent of the current game configuration the handler always invokes the continuation \code{k} with 1.
 
 A moment's thought reveals that we can easily predict the winner when using the \code{naive} strategy. The parity of $n$, the number of sticks at the beginning, determines the winner. For odd $n$ Alice wins and vice versa for even $n$, e.g.
 \begin{lstlisting}[style=links]
@@ -263,11 +262,11 @@ Alice() : Player
 \end{example}
 
 \begin{example}[A perfect strategy \cite{Kammar2013}]\label{ex:nim-perfect}
-A perfect strategy makes an optimal move at each turn. In particular, an optimal move depends on the remaining number of sticks $n$. The perfect move can be defined as a function of $n$, e.g.
+A perfect strategy makes an optimal move at each turn. In particular, an optimal move depends on the remaining number of sticks $n$. Therefore the perfect move can be defined as a function of $n$, e.g.
 \[ \text{perfect}(n) = \max\{n\; \text{mod}\; 4, 1\} \]
 In our restricted Nim game a perfect strategy is a winning strategy for Alice if and only if the number of remaining sticks is \emph{not} divisible by 4.
 
-We implement the function \code{perfect} above with an addition: We pass it a continuation as second parameter
+We implement the function \code{perfect} above with an addition: We pass it a continuation as second parameter:
 \begin{lstlisting}[style=links]
 fun perfect(n, k) {
   k(max(mod(n,4),1))
@@ -281,7 +280,7 @@ handler pvp(m) {
 }
 \end{lstlisting}
 Notice that this time we pattern match on \code{Move}'s argument to obtain the game configuration.
-By running some examples we witness that Alice wins whenever $n$ is not divisible by four:
+By running some examples we witness that Alice wins when $n$ is not divisible by four:
 \begin{lstlisting}[style=links]
 links> play(pvp, 9);
 Alice() : Player
@@ -342,7 +341,7 @@ fun bruteForce(player, n, k) {
 \end{lstlisting}
 The first line inside \code{bruteForce} is the critical point. Here we map the continuation \code{k} over the possible moves in the current game configuration. Accordingly, the function simulates all possible future configurations yielding a list of possible winners. The auxiliary function \code{indexOf} looks up the position of \code{player} in the list of winners. The position plus one corresponds to the winning strategy because lists indexes are zero-based. If the player has a winning strategy then the (zero-based) position is returned inside a \type{Just}, otherwise \code{Nothing} is returned.
 
-Let Alice play the brute force strategy and let Bob play the perfect strategy which is captured by the strategy handler \code{bfvp}:
+We let Alice play the brute force strategy and Bob play the perfect strategy:
 \begin{lstlisting}[style=links]
 handler bfvp(m) {
   case Move((Alice,n),k) -> bruteForce(Alice,n,k)
@@ -350,7 +349,7 @@ handler bfvp(m) {
   case Return(x)         -> x
 }
 \end{lstlisting}
-Here we take advantage of deep pattern-matching to distinguish between when \type{Alice} and \type{Bob}'s moves. Obviously, the brute force strategy is inefficient as it redoes a lot of work for each move. The winning strategy that it discovers happens to be the same as the perfect strategy. Albeit, \code{bruteForce} computes it in exponential time whilst \code{perfect} computes it in constant time. The following outcomes witness that \code{bruteForce} and \code{perfect} behaves identically
+Here we take advantage of deep pattern-matching to distinguish between when \type{Alice} and \type{Bob}'s moves. Obviously, the brute force strategy is inefficient as it redoes a lot of work for each move. The winning strategy that it discovers happens to be the same as the perfect strategy. Albeit, \code{bruteForce} computes it in exponential time whilst \code{perfect} computes it in constant time. The following outcomes witness that \code{bruteForce} and \code{perfect} behaves identically:
 \begin{lstlisting}[style=links]
 links> play(bfvp, 9);
 Alice() : Player
@@ -362,15 +361,13 @@ links> play(bfvp, 36);
 Bob() : Player
 \end{lstlisting}
 \end{example}
-Although, the \code{bruteForce} strategy is significantly slower than \code{perfect} strategy in Example \ref{ex:nim-brute-force} the point of interest here is not efficiency but rather modularity. However, remark that during Examples \ref{ex:nim-naive}-\ref{ex:nim-brute-force} the game model remained unchanged. We interpreted the game by instantiating the operation \code{Move} with different implementations. 
-Moreover, Example \ref{ex:nim-brute-force} nicely demonstrated that we may exchange two observable equivalent implementations (handlers) effortlessly. In practical terms this implies that one would be able to exchange a slow component with a faster, improved version effortlessly. The coupling between the game model and the handlers is low as they interface through the abstract operation \code{Move}.
+Although, the \code{bruteForce} strategy is significantly slower than \code{perfect} strategy in Example \ref{ex:nim-brute-force} the point of interest here is not efficiency but rather modularity. Remark that during Examples \ref{ex:nim-naive}-\ref{ex:nim-brute-force} the game model remained unchanged. We interpreted the game by instantiating the operation \code{Move} with different implementations. 
+Moreover, Example \ref{ex:nim-brute-force} nicely demonstrated that we may exchange two observable equivalent implementations (handlers) effortlessly. In practical terms this implies that one would be able to exchange a slow component with a faster, improved version effortlessly. The coupling between the game model and the handlers is low as they interface through the abstract operation \code{Move}. Furthermore, the handlers followed a similar pattern. It would be convenient to be able to abstract over this pattern by defining a generic game handler that, in addition to an abstract computation, takes two strategies as input. However, in the current implementation handlers cannot be parameterised.
 
 Examples \ref{ex:nim-naive}-\ref{ex:nim-brute-force} gave different interpretations of the same game. Furthermore, they all computed the same thing, namely, the winner. In particular, each handler applied the identity transformation in the \code{Return}-case. However, by taking full advantage of the \code{Return}-case we can use handlers to compute data from computations. For example we can construct the game tree for a Nim game as Example \ref{ex:nim-game-tree} shows. 
 
 \begin{example}[Game tree generator \cite{Kammar2013}]\label{ex:nim-game-tree}
-In a game tree a node represents a particular player's turn, and outgoing edges corresponds to particular moves that the player may perform. A path down the game tree corresponds to a particular sequence of moves taken by the players ending in a leaf node which corresponds to the winner. Figure \ref{fig:ex-nim-game-tree} illustrates an example game tree when starting with 3 sticks.
-
-Our game tree is a ternary tree which we represent using a recursive variant type, e.g.
+In a game tree a node represents a particular player's turn, and outgoing edges corresponds to particular moves that the player may perform. A path down the game tree corresponds to a particular sequence of moves taken by the players ending in a leaf node which corresponds to the winner. Figure \ref{fig:ex-nim-game-tree} illustrates an example game tree when starting with 3 sticks. Our game tree is a ternary tree which we represent using a recursive variant type, e.g.
 \[ \type{GameTree} \defas [|\type{Take}:(\type{Player},[(\type{Int},\type{GameTree})])\,|\,\type{Winner}:\type{Player}|] \]
 Leaves are tagged with \code{Winner}, while nodes are tagged with \code{Take}. A \code{Take} node embeds a tuple where the first component is current player, and the second component contains the possible subgames.
 We define a function \code{reifyMove} which takes a player, the number of sticks, and a continuation to construct a node in the game tree, e.g.

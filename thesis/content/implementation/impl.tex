@@ -1,5 +1,5 @@
 \chapter{Implementation}\label{ch:implementation}
-The Links compiler is a multi-pass compiler with several distinct phases.
+The Links compiler is a multi-pass compiler with several distinct stages.
 Coarsely, we can divide the compiler into two major components the front-end and back-end.
 We can further subdivide the front-end into
 \begin{itemize}
@@ -13,7 +13,7 @@ Similarly, the back-end can be further subdivided
   \item IR Compiler: Transforms the source into an intermediate representation used by the interpreter.
   \item Pattern-matching compiler: Aids the IR compiler by compiling pattern-matching constructs into the intermediate representation.
 \end{itemize}
-Figure \ref{fig:compiler-phases} provides a high level picture of how the different relevant phases are connected. The subsequent sections discuss implementation specific details.
+Figure \ref{fig:compiler-phases} provides a high level picture of how control flow through the different relevant stages. The subsequent sections discuss implementation specific details.
 \begin{figure}[t]
 \begin{center}
 \tikzset{my ellipse/.style={

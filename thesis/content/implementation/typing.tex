@@ -15,6 +15,6 @@ The typing rule for closed handlers is similar, however, it leaves out the row v
 \subsection{Implementation details}
 The type checker for handlers take advantage of the existing infrastructure for the \code{switch}-construct which also embodies a collection of \code{case}-expressions. Figure \ref{fig:handler-switch} displays the two constructs side-by-side.
 
-In order to determine which operations a handler handles the type checker invokes the type checking procedure for \code{case}-expressions. This procedure returns a list of the patterns being matched. In the concrete case for handlers the procedure infers that the \code{case}-expressions pattern match on a variant type. The tags in the variant are precisely the names of the operations that the handler handles. This also reveals why operations resemble variant constructors so closely.
+In order to determine which operations a handler handles the type checker invokes the type checking procedure for \code{case}-expressions. This procedure returns a list of the patterns being matched. In the concrete case for handlers the procedure infers that the \code{case}-expressions pattern match on a variant type. The tags in the variant are precisely the names of the operations that the handler handles. This also reveals why operations resemble type and data constructors so closely.
 
 Internally, a variant is represented by a row. So, the handler type checker extracts the row from the inferred variant type, thereafter it applies the typing rule \eqref{eq:typing} to turn obtain the desired effect row.

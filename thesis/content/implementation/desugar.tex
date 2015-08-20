@@ -32,7 +32,7 @@ fun(m) {
 \caption{The \code{handler}-construct gets desugared into a \code{handle}-construct where the computation $m$ is abstracted over using a function.}\label{fig:closedhandler-desugar}
 \end{figure}
 
-The \code{open handler}-constructs get desugared in a similar fashion, but, with a small twist: The \code{handle}-construct gets wrapped inside a thunk. The extra layer of indirection entailed by this transformation is \emph{the key} to make handlers composable. The crucial insight is that by transforming every open handler into a thunk compositionality follows for free because computations are modelled as thunks.
+The \code{open handler}-constructs get desugared in a similar fashion, but, with a small twist: The \code{handle}-construct gets wrapped inside a thunk. The extra layer of indirection entailed by this transformation is \emph{the key} to make handlers composable. The crucial insight is that by transforming every open handler into a thunk compositionality follows for free.
 Figure \ref{fig:openhandler-desugar} shows the conceptual transformation for \code{open handler}-constructs.
 
 \begin{figure}[h]
