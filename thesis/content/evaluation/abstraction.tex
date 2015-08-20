@@ -1,20 +1,22 @@
 \section{Handlers with row polymorphic effects}\label{sec:eval-abs}
-Through a series of examples in Chapter \ref{ch:programming-with-handlers} we demonstrated that handlers for algebraic effects indeed afford a high-degree of modularity, and, the compositionality of open handlers enables us to extend the interpretation of an abstract computation effortlessly. In particular, row polymorphism makes programming with effects uniform as it effectively eliminates the ordering issue we discussed in Section \ref{sec:mt}.
+Through a series of examples in Chapter \ref{ch:programming-with-handlers} we demonstrated that handlers for algebraic effects indeed afford a high-degree of modularity, and, that the compositionality of open handlers enables us to extend the interpretation of an abstract computation effortlessly. In particular, row polymorphism makes programming with effects an uniform experience as it effectively eliminates the ordering issue we discussed in Section \ref{sec:mt}.
 
-Note: Handlers themselves are very simply, must require very little code.
+In our experience, we have found that handler code tend to be concise. This probably stems from the fact that handlers simply map operation names to computations. Hence, in its essence, a handler boils down to a command dispatcher.
 
-\section{Handlers and user-defined effects in Links}
-Syntax-wise handlers appear as a well-integrated part of Links because they borrow their syntax from the existent \code{switch}-construct.
-Furthermore, handlers are first-class citizens in Links, i.e. a handler can be passed as argument to a function, returned from a function or assigned a name. The first-class property is implicitly inherited from functions, because, essentially handlers desugar into functions.
+Handlers also raise the level of abstraction substantially. Accordingly, it can be difficult for the programmer to trace a computation. This is especially true when one has a stack of open handlers. The interaction between handlers can be difficult to grasp which can make it hard to debug handler-based programs. Even though a particular composition of handlers type checks, it is by no means a guarantee that the resulting handler has the desired semantics. Row polymorphism along with the way open handlers compose in our implementation makes it easy to get the composition wrong. Handlers also require the programmer to be confident with continuations as they are key to programming with handlers. 
+
+\section{Handlers and user-defined effects in Links}\label{sec:eval-integration}
+Syntax-wise handlers appear as a well-integrated part of Links because they borrow their syntax from the \code{switch}-construct.
+Furthermore, handlers are first-class citizens in Links, i.e. a handler can be passed as argument to a function, returned from a function or assigned a name. The first-class property is inherited from functions, because, essentially handlers desugar into functions.
 As a result the Links language remains coherent.
 
-User-defined effects exploit Links' structural typing, therefore the programmer never has to declare effects or operations in advance. The Links compiler automatically infers the type of operations. This fits well with a read-eval-print-loop style of development as employed by the Links top-level interpreter. Unfortunately, it may cause effect signatures to blow up. For example, if a computation is composed from many different operations, or the (closed) handler is recursive. In such cases the Links interpreter infers some verbose operation signatures. The issue can be solved to some extent by annotating operation invocation with an user-defined type alias. Currently, effects are implicitly given by the present operations in the effect row, it would be desirable to have effect-name aliasing, for example something like
+User-defined effects exploit Links' structural typing, therefore the programmer never has to declare effects or operations in advance. The Links compiler automatically infers the type of operations. This fits well with a read-eval-print-loop style of development as employed by the Links top-level interpreter. Unfortunately, it may cause effect signatures to blow up. For example, if a computation is composed from many different operations, or a (closed) handler is recursive. In such cases the Links interpreter infers some verbose operation signatures. The issue can be solved to some extent by annotating operation cases and invocations with types. Currently, effects are implicitly given by the present operations in the effect row, it would be desirable to have effect-name aliasing, for example something like
 \[ \code{effectname State}(s) = \{\type{Get}: () \to s, \type{Put}: s \to ()\} \]
 This would help condense verbose effect signatures. The current design of operations does not integrate as well with the language as handlers. This is mainly due to two things:
 \begin{enumerate}
-  \item Operations use type constructor syntax, but act on values,
+  \item Operations use type and data constructor syntax, but acts like a function,
   \item and operations have to be explicitly discharged using the \code{do}-primitive.
 \end{enumerate}
 Neither type constructors nor operations are first-class in Links, but one might expect to able to pass an operation as parameter or return one. If one tries to do this, then the type checker will infer a variant type, rather than an operation, which can steer confusion.
 
-Finally, the \code{do}-primitive is rather strange in Links, because it is a syntactic construct that does not compose with the rest of the language. A \code{do} must be immediately followed by an operation name. Moreover, it appears as a prefix operator, but ``do'' is not a lexicographic valid operator name in Links. 
+Finally, the \code{do}-primitive is rather strange in Links, because it is a syntactic construct that does not compose with the rest of the language. A \code{do} must be immediately followed by an operation name. Moreover, it appears as a prefix operator, but ``do'' is not a legal operator name in Links. 

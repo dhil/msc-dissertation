@@ -1,4 +1,4 @@
-\section{Problem statement}
+\section{Problem statement}\label{sec:problem-statement}
 In the previous section we argued that programming with \emph{explicit} effect is desirable, but we pointed out that it is not painless to program with explicit effects. In particular, we demonstrated that the monadic approach lacks compositionality and modularity. But we could regain compositionality using Monad Transformers, however the transformer stack imposes a statical ordering on effects which impedes modularity. Compositionality and modularity are cornerstones of programming which we ideally would like to retain while being explicit about effects. This observation leads us to the following problem statement:
 \begin{quote}
   \emph{How may we achieve a programming model with modular, composable and unordered effects?}

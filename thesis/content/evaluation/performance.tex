@@ -5,7 +5,7 @@ Since Links is an interpreted language it does not make sense to measure the raw
 The experiments were conducted on a standard Informatics DICE Machine\footnote{Machine name: Enna. Specifications: Intel Core i5-4570 3.20 Ghz, 8 GB Ram, Scientific Linux 6.6 (Carbon) running Linux kernel 2.6.32-504.16.2.el6.x86\_64}. The following three different micro benchmarks were used:
 \begin{itemize}
   \item Stateful counting: Counting down from $10^7$ to $0$ using a closed state handler.
-  \item Stateful counting with logging: Counting down from $10^7$ to $0$ using the state logging handler from Example \ref{ex:logging-state}.
+  \item Stateful counting with logging: Counting down from $10^7$ to $0$ using the state logging handler from Example \ref{ex:state-tracking}.
   \item Nim game tree generation: Generation of game tree with starting configuration $n = 20$ using the handler from Example \ref{ex:nim-game-tree}.
 \end{itemize}
 Each handler program has two pure counterparts. For the stateful counting benchmarks the first pure version is a direct, tail-recursive implementation which passes the current state as an explicit parameter between invocation. The second pure implementation encapsulates state inside a function in similar fashion to the state handler. 
@@ -17,7 +17,7 @@ The first pure game tree generator program is a hard-coded, direct implementatio
 
 The benchmark programs were \emph{not} optimised. Each benchmark was sampled ten times. The built-in performance-measuring mechanism in the Links interpreter has been used to measure the execution time. The execution time only includes the run time of the program, that is it does \emph{not} include loading up the Links interpreter or program compilation.
 \subsection{Results}
-Table \ref{tbl:stateful-counting} displays the results obtained from the first stateful counting benchmark. The direct, tail-recursive implementation is twice the alternative implementations. A state change does not incur an extra cost, because it is passed as an explicit parameter between invocations. However, the handler implementation and the second pure implementation both use functions to encapsulate state, therefore each state change causes a new function allocation. The results would suggest that the penalty is high for repetitive allocation of functions.
+Table \ref{tbl:stateful-counting} displays the results obtained from the first stateful counting benchmark. The direct, tail-recursive implementation is twice as fast as the alternative implementations. The reason for this is that a state change does not incur an extra cost, because it is passed as an explicit parameter between invocations. However, the handler implementation and the second pure implementation both use functions to encapsulate state, therefore each state change causes a new function allocation. The results would suggest that there is a high penalty  for repetitive allocation of functions.
 \begin{table}[H]
   \centering
   \begin{tabular}{| l | r | r |}
@@ -32,7 +32,7 @@ Table \ref{tbl:stateful-counting} displays the results obtained from the first s
     \hline
   \end{tabular}\caption{Results obtained from the stateful counting benchmark.}\label{tbl:stateful-counting}
 \end{table}
-The same seems to be evident for the second stateful counting benchmark. The results are shown in Table \ref{tbl:stateful-counting-logging}. The tail-recursive pure implementation is significantly faster than the two alternative implementations. It is roughly $3.5$ times faster than the pure implementation that encapsulates state inside functions, and further it is about $8$ times faster than the handler version. However, this time there is a big difference between the the second pure implementation and the handler implementation. The pure version is little less than twice as fast as the handler version. Possibly, the additional cost is incurred by the handler being open. Each change in state causes two additional operations to be discharged. In addition the handler stack is unwound three times. In particular, three different delimited continuations are invoked during one state change. When a continuation returns control to a handler, it implicitly passes through the return-cases of that particular handler's predecessors (in order to lift the result of the computation). So, the open handler stack incurs a large extra cost.
+The same seems to be evident for the second stateful counting benchmark. The results are shown in Table \ref{tbl:stateful-counting-logging}. The tail-recursive pure implementation is significantly faster than the two alternative implementations. It is roughly $3.5$ times faster than the pure implementation that encapsulates state inside functions, and further it is about $8$ times faster than the handler version. However, this time there is a big difference between the the second pure implementation and the handler implementation. The pure version is little less than twice as fast as the handler version. The additional cost is incurred by the handler design. Each change in state causes two additional operations to be discharged. In addition the handler stack is unwound three times. In particular, three different delimited continuations are invoked during one state change. When a continuation returns control to a handler, it implicitly passes through the return-cases of that particular handler's predecessors (in order to lift the result of the computation). So, the open handler stack incurs a large extra cost.
 \begin{table}[H]
   \centering
   \begin{tabular}{| l | r | r |}
@@ -63,4 +63,4 @@ The generic pure implementation is about 14\% faster than the handler implementa
     \hline
   \end{tabular}\caption{Results obtained from the Nim game tree generation benchmark.}\label{tbl:nim-bench}
 \end{table}
-These results suggest that there is plenty of room for optimisations. Kammar et al. achieve better relative performance figures than us \cite{Kammar2013} with their embedding of handlers in Haskell. However their handlers desugar into monads which the Haskell compiler extensively optimises. Thus, it is likely that with optimisations with could achieve far better performance figures.
+These results suggest that there is plenty of room for optimisations. Kammar et al. achieve better relative performance results than us with their embedding of handlers in Haskell \cite{Kammar2013}. However their handlers desugar into monads which the Haskell compiler extensively optimises. Thus, it is likely that with optimisations with could achieve far better performance figures.

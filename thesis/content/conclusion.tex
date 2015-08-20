@@ -1,15 +1,19 @@
 \chapter{Conclusion and future work}\label{ch:conclusion}
+In Section \ref{sec:problem-statement} we asked whether we could achieve an effectful programming model in which compositionality and modularity coexist. We proposed Plotkin and Pretnar's handlers for algebraic effects \cite{Plotkin2013} with the addition of row polymorphism. Through a series of examples in Chapter \ref{ch:programming-with-handlers} we demonstrated that the resulting programming model indeeds achieve a high-degree of modularity. Furthermore, due to our design of computations as thunks and row polymorphism we were able to achieve compositionality for open handlers. Compositionality for handlers adds additional flexible as individual program parts can be developed independently of each other.
+
+Row polymorphism eliminates the effect ordering issue altogether. As a result it becomes easy to write reusable code.
+
 \section{Future work}
 Closed and open handlers provide a fine basis, however there are several interesting generalisation to consider such as parameterisable and shallow handlers. 
 
-In our implementation handlers only take one argument: the input computation. Parameterisable handlers would help reduce the amount of boilerplate code, and even further increase modularity. Especially, in Section \ref{sec:interpreting-nim} it was evident that the game handlers followed a similar pattern. With parameterisable handlers we could define a generic strategy game handler that would take two strategies as input, one for each player.
+In our implementation handlers only take one argument: the input computation. Parameterisable handlers would help reduce the amount of boilerplate code, and even further increase modularity. %Especially, in Section \ref{sec:interpreting-nim} it was evident that the game handlers followed a similar pattern. With parameterisable handlers we could define a generic strategy game handler that would take two strategies as input, one for each player.
 
 Our handlers handle computations uniformly, i.e. the continuation of an operation is handled by the current handler. However, one can also imagine handlers that handle computations nonuniformly such handlers are called \emph{shallow handlers}. In a shallow handler the continuation of an operation is an abstract computation that must be explicitly handled.
 
 Notably, most of the infrastructure to support parameterisable and shallow handlers are already in place in Links, however, the typing rule and interpreter need to be updated. In addition, it would be worthwhile to investigate how to make handlers efficient.
 
-We only enabled handlers in the toplevel (server-side). It would be interesting to enable handlers on the client side as well. Links compiles client side code to JavaScript, so one could possibly translate the CPS implementation of handlers to an equivalent CPS encoding in JavaScript.
+We only enabled handlers in the toplevel (server-side). It would be interesting to enable handlers on the client side as well. Links compiles client side code to JavaScript, so one could possibly translate the CPS encoding of handlers into an equivalent CPS encoding in JavaScript.
 
-Our closed handlers implicitly allow the wild to occur, however, we have pure closed handlers that disallow wild as well. Pure handlers only provide structural recursion which is guaranteed to terminate, therefore handler evaluation could be added to the Links query normalisation procedure\footnote{Credit for this observation is due to Sam Lindley.}.
+Our closed handlers implicitly allow the wild to occur, however, we also have pure closed handlers that disallow \code{wild}. Pure handlers only provide structural recursion which is guaranteed to terminate, therefore handler evaluation could be added to the Links query normalisation procedure\footnote{Credit for this observation is due to Sam Lindley.}.
 
 The Links interpreter has yet to be formalised.
