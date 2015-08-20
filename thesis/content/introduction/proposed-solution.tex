@@ -1,11 +1,13 @@
 \section{Proposed solution}\label{sec:proposedsolution}
-The issues with existing models for effectful programming boil down to variants of the ordering problem as discussed in Section \ref{sec:mt}. Therefore we propose \emph{handlers for algebraic effects} with a small twist: to eliminate effect ordering we will use \emph{row polymorphism}. We discuss row polymorphism in greater detail in Section \ref{sec:rowpolymorphism}.
+Plotkin and Pretnar's handlers for algebraic effects \cite{Plotkin2013} affords a very attractive model for programming with effects. The principal idea is to decouple the semantics and syntactic structure of effectful computations, i.e. an effect is a collection of abstract operations. By abstract we mean that the operation by itself has no concrete implementation. Abstract operations compose seamlessly to form the syntactical structure of computations. Independent of the structure handlers instantiate abstract operations with concrete implementations.
+
+We suppose that handlers for algebraic provide the basis for a suitable model for effectful programming. However, handlers and algebraic effects alone do not make any promises to eliminate the effect ordering issue. Therefore, we propose handlers for algebraic effects with a small twist: We will use \emph{row polymorphism} to eliminate effect ordering. By definition a row is orderless. We discuss row polymorphism in greater detail in Section \ref{sec:rowpolymorphism}.
 
 \subsection{Objectives, aim and scope}
-The aim is to examine the programming model achieved by using handlers with row polymorphic effects.
+The aim is to examine the programming model achieved by combining handlers and row polymorphism.
 In order to examine the model we must first implement it, thus the primary objective is to implement handlers and support for user-defined effects in Links.
 
-Links is a web-oriented functional programming language that already has a row-based effect system in place. Because Links has built-in support for numerous web-oriented features that are not key to our treatment, we restrict the scope to a working implementation in top-level Links. We introduce the relevant aspects of Links in Section \ref{sec:links}.
+Links is a web-oriented functional programming language that already has a row-based effect system in place. Because Links has built-in support for numerous web-oriented features that are not key to our treatment, we restrict the scope to a working implementation in top-level Links. We will introduce the relevant parts of Links in Section \ref{sec:links}.
 
 \subsection{Contributions}
 The main contributions are:

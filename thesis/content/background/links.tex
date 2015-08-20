@@ -1,5 +1,5 @@
-\section{Links toplevel}
-Links is a strongly-, statically-typed, web-oriented functional programming language that renders webprogramming tierless by enabling programmers to write their code in one single source language \cite{Cooper2006,Links}. However, we will not address Links' web-oriented features, instead we will give a brief introduction to the functional core language.
+\section{Links toplevel}\label{sec:links}
+Links is a strongly-, statically-typed, web-oriented functional programming language that renders webprogramming tierless by enabling programmers to write their code in one single source language \cite{Cooper2006,Links}. However, we will not address Links' web-oriented features, instead we will give a brief introduction to relevant parts of the functional core language.
 
 \subsection{The basics}
 Links is an interpreted language. Launching the Links interpreter leaves us in a read-eval-print-loop (REPL), where we can execute arbitrary Links expressions. We will use the notation ``\code{links>}'' to denote when we use the REPL. The syntax of Links is similar to JavaScript's syntax.
@@ -11,7 +11,7 @@ links> var x = 42;
 x = 42 : Int
 \end{lstlisting}
 Note, variables are single-assignment, there is no concept of mutable references in Links.
-Similarly, functions are declared using the \code{fun} keyword, followed by a list of parameters and body definition. Furthermore, functions can be either anonymous or named:
+Similarly, functions are declared using the \code{fun} keyword, followed by a list of parameters and a body definition. Furthermore, functions can be either anonymous or named:
 \begin{lstlisting}[style=links]
 links> fun id(x) { x };
 id = fun : (a) -> a
@@ -41,7 +41,7 @@ The variable \code{a} is a type variable. So, the type constructor \code{Maybe} 
 links> Just(2);
 Just(2) : [|Just:Int|§*$\rho$*§|]
 \end{lstlisting}
-The Links type checker infers type a polymorphic variant type which Links makes it explicit by the presence of $\rho$. Links employ structural typing, that is, two types are equivalent if and only if they have identical structure. Often Links infers a more general type than needed, we can help the type checker by annotating an expression:
+The Links type checker infers type a polymorphic variant type which is made explicit by the presence of $\rho$. Links employ structural typing, that is, two types are equivalent if and only if they have identical structure. Often Links infers a more general type than needed, we can help the type checker by annotating an expression:
 \begin{lstlisting}[style=links]
 links> Just(2) == (Just(2) : Maybe(Int));
 true : Bool
@@ -77,4 +77,12 @@ true : Bool
 The \code{case}-statements pattern matches on the expression \code{maybe}. Links supports deep pattern-matching, so the \code{switch}-construct can be used to decompose an expression.
 
 \subsection{The effect system}
-Links has a row-based effect system.
+Links has a row-based effect system. Function types are annotated with effects, e.g. $(A_1,\dots,xA_n) \xrightarrow{E} B$
+denotes the type of a function that takes $n$ arguments of types $A_1,\dots,A_n$, and might perform effects $E$ before returning a value of type $B$ \cite{Links}. The effects $E$ are represented as a row type, where presence indicates that the effect might happen during runtime, while absence indicates that the effect will definitely not happen at runtime. Only function types can be annotated with effect, this implies that effects can only occur during function application.
+
+For example the built-in function \code{print} prints a string to the standard output. Printing to standard output is an effectful action. Links assigns \code{print} the type $(\type{String}) \xrightarrow{\{\code{wild} \; | \; \rho\}\;} ()$. The \code{wild} effect is a syntactic, built-in effect \cite{Links}. The effect system will also capture divergence. Consider the following recursive function:
+\begin{lstlisting}[style=links]
+fun div() { div() }
+\end{lstlisting}
+Links assigns \code{div} the type $() \xrightarrow{\{\code{wild} \; | \; \rho\}\;} a$. Most higher-order functions in the prelude (standard library) have open effect rows, thus allowing effectful functions to be passed as input.
+

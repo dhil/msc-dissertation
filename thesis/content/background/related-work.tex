@@ -1,49 +1,41 @@
 \section{Related work}\label{sec:relatedwork}
 This section discusses and evaluates related work on programming models with handlers and effects.
 
-\subsection{The Eff language}
-The \emph{Eff} programming language, by Bauer and Pretnar \cite{Bauer2015}, has a first-class implementation of handlers for algebraic effects. The language has the look and feel of OCaml.
-Eff achieves unordered effects through a combination of effect polymorphism and subtyping. 
+\subsection{Languages with effects}
+\paragraph{Eff.} The \emph{Eff} programming language, by Bauer and Pretnar \cite{Bauer2015}, has first-class support for effect handlers and algebraic effects. The language has the look and feel of OCaml. Eff employs nominal typing for effects, therefore an effect is a named collection of abstract operations. To discharge an operation, the programmer has to generate an effect instance. Operations can be discharged through the effect instance. This interface is similar to the object-oriented interface in OCaml. 
+Eff achieves unordered effects through effect subtyping. 
+
+\paragraph{Frank.} The Frank programming language by McBride \cite{McBride2014} takes the notion of effect handlers to the extreme. In Frank there are no functions, there are only handlers. Consequently, a function is a special case of a handler.
+In particular, it only supports \emph{shallow} handlers whereas our implementation only supports \emph{deep} handlers. Shallow handlers handle computations nonuniformly. Additionally, Frank employs ``call-by-push-value'' (CBPV) evaluation semantics. Essentially, CBPV makes the distinction between computations and values explicit. Since Frank distinguishes between computations and values side-effects can only occur in computations. Hence there is a clear separation between segments of code where effects might occur and where effects are guaranteed never to occur.
+
+\paragraph{Koka with row polymorphic effects.}
+Leijen's programming language Koka employs a row-based effect system \cite{Leijen2014} with support for arbitrary user-defined effects \cite{Vazou2015}.
+Notably, Koka uses row polymorphism to capture unordered effects, however, in contrast to our approach Koka allows an effect to occur multiple times in a row. Effect duplication is crucial to support scoping of effects.
+Furthermore, Koka has no notion of effect handler except for exception handlers which are to some extent reminiscent of those in Java, C\#, etc.
 
 \subsection{Haskell libraries}
-We will discuss two implementations of handlers on top of Haskell by Kammar et. al \cite{Kammar2013} and Wu et. al \cite{Wu2014}.
+There is no first-class support for handlers in Haskell, however there are several embeddings of effect handlers in Haskell. Furthermore, the implementations take advantage of Haskell's lazy evaluation strategy.
+%We will discuss two implementations of handlers on top of Haskell by Kammar et. al \cite{Kammar2013} and Wu et. al \cite{Wu2014}.
 
-\subsubsection{Data types á la carte}
-Swierstra \cite{Swierstra2008} demonstrates how to compose effectful programs using \emph{free monads} in Haskell.
-The free monads form the basis for a framework for encoding handlers and effects which the subsequent libraries use.
+\paragraph{Data types á la carte.}
+In his functional pearl, Swierstra illustrates how to write effectful programs using \emph{free monads} \cite{Swierstra2008}. Free monads gives rise to a natural encoding of effect handlers \cite{McBride2014}.
 
-\subsubsection{Extensible effects}
-A few words on Kiselyov's paper? \cite{Kiselyov2013}.
+\paragraph{Handlers in action.}
+Kammar et al. \cite{Kammar2013} considers two different implementations of handlers in Haskell. One implementation is based on free monads, while the other is based on continuations.
 
-\subsubsection{Handlers in action}
-Kammar et. al considers two different approaches to implement handlers on top of Haskell. One approach is based on free monads \cite{Swierstra2008}, whilst the other is a continuation-based approach \cite{Kammar2013}.
+They achieve unordered effects by encoding handlers as type classes. Therefore handlers also inherit the limitations of type classes. Type classes are not first-class in Haskell, so neither are handlers. Haskell do not permit local type class definitions, therefore handlers must be defined in the top-level.
+Furthermore, the order in which handlers are composed leak into the type signature, because their (open) handlers explicitly mention a parent handler \cite{Kammar2013}. However, this is less problematic than the effect ordering problem. They propose that using row polymorphism may yield a cleaner design \cite{Kammar2013}. To a large extent our implementation is inspired by their work. Moreover, they present a collection of examples, some of which we have reproduced in Links. We also take a similar approach to evaluating the relative performance of handlers. 
 
-Their handlers are encoded as type classes, thus handlers inherent the limitations of type classes. Particularly, type classes are not first-class in Haskell, so neither are the handlers.
-To achieve unordered effects they use type class constraints. Type classes can only be defined in top-level as Haskell do not permit local type-class definition. Consequently, every effect handler must be defined in the top-level too.
+Notably, they provide a Template Haskell interface which makes it easier to use their library.
 
-Furthermore, the order in which handlers are composed leak into the type signature, because their (open) handlers explicitly mention a parent handler \cite{Kammar2013}. Albeit, it does not cause an issue like Monad Transformer ordering issue, but it is still undesirable.
+\paragraph{Extensible effects.}
+Kiselyov et al. presents an alternative framework to Monad Transformers based on free monads \cite{Kiselyov2013}. Their framework is modelled after the syntax of Monad Transformers, but, allows effects to be combined in any order. Like Frank their framework only supports shallow handlers which gives the programmer additional flexibility, but, shallow handlers are often less efficient than deep handlers \cite{Kiselyov2013}.
 
-Kammar et. al hypothesises that an implementation based on row polymorphism may remedy the limitations and yield a cleaner design \cite{Kammar2013}.
+\paragraph{Handlers in scope}
+Wu et al. investigates scoping constructs for handlers to delimit the scope of effects \cite{Wu2014}.
 
-\subsubsection{Handlers in scope}
-Wu et. al investigate how to use handlers to delimit the scope of effects \cite{Wu2014} as using handlers for scoping has limitations. In other words, the ordering of handlers may affect the semantics. 
-
-They present two solutions embedded in Haskell \cite{Wu2014}. The first solution extends the existing effect handler framework based on free monads with so-called \emph{scope markers} which fits nicely into the framework. However they demonstrate that handlers along with scope markers are insufficient to capture higher-order scoped constructs properly.
-
-Their second approach is continuation-based and provides a \emph{higher-order syntax} that allows to embed programs with scoping constructs \cite{Wu2014}. However it remains an open question whether their implementation is viable in other languages than Haskell.
-
-\subsection{Frank}
-The Frank programming language by McBride \cite{McBride2014} takes the notion of effect handlers to the extreme. In Frank there are no functions, there are only handlers. Moreover, it employs an interesting evaluation order known as ``call-by-push-value'' (CBPV). Intuitively, CBPV is the unification of the strict call-by-value and non-strict call-by-name semantics. The choice whether to employ the strict or non-strict semantics has been made explicit to the programmer.
-
-Frank distinguishes between computations and values as a consequence side-effects can only occur in computations. Hence there is a clear separation between segments of code where effects might occur and where effects are guaranteed never to occur.
-
-%In contrast to Eff, and the Haskell libraries, it provides its own syntax, and thus does not try to adapt to an existing language.
+They present two solutions: The first solution extends an existing effect handler framework based on free monads with so-called \emph{scope markers} to mark the beginning and ending of blocks that should be handled in a self-contained context. However they demonstrate that handlers along with scope markers are insufficient to capture higher-order scoped constructs properly.
+Their second approach provides a \emph{higher-order syntax} which carries the scoped blocks directly \cite{Wu2014}. In addition, the second approach gives finer control how handlers traverse the syntax tree. %However it remains an open question whether their implementation is viable in other languages than Haskell.
 
 \subsection{Idris' Effects}
-Brady \cite{Brady2013} presents the library {\scshape{Effects}} for the dependently-typed, functional programming language {\scshape{Idris}}.
-
-\subsection{Koka with row polymorphic effects}
-Leijen's programming language Koka is an effect-based web-oriented language \cite{Leijen2014}. 
-It supports arbitrary user-defined effects \cite{Vazou2015}.
-Notably, Koka uses row polymorphism to capture unordered effects however Koka's row polymorphism allow duplicate effect occurrences which stands in contrast to the approach we propose.
-In particular, Koka has no notion of effect handler except for exception handlers which are to some extent reminiscent of those in Java, C\#, etc.
+Brady provide a library implementation of handlers called {\scshape{Effects}} for the dependently-typed, functional programming language {\scshape{Idris}} \cite{Brady2013}. The purpose is to investigate the use of effects to reason about programs. So, the type checker does not infer effect types, rather it checks that effects are used correctly according to some specification given by the programmer.

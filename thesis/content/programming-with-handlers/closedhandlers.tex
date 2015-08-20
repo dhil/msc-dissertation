@@ -58,7 +58,7 @@ links> force(fun() { print("Hello World") });
 "Hello World"
 () : ()
 \end{lstlisting}
-The \code{force} handler's effect row implicitly contains the wild effect. Without the presence of the wild effect closed handlers would not be able to run computations that might diverge. Moreover, many of the higher-order functions in Links have non-empty effect rows. Thus disallowing the wild effect would severely limit the class of computations that a closed handler can accept as input.
+The \code{force} handler's effect row implicitly contains the \code{wild} effect. Without the presence of the \code{wild} effect closed handlers would not be able to run computations that might diverge. Therefore disallowing the \code{wild} effect severely limit the class of computations that a closed handler can accept as input.
 \end{example}
 
 The next example demonstrates an actual transformation.

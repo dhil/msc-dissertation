@@ -1,32 +1,36 @@
 \section{Row polymorphism}\label{sec:rowpolymorphism}
 Row polymorphism is a typing discipline for row-based types such as records and variants \cite{Remy1993}. A row is an unordered collection of labels, e.g. 
-\[ \type{Student} \defas \record{\code{name}:\type{String},\code{course}:\type{String}} \]
-denotes a row type with two fields: name of type \type{String} and course of type \type{String}. The record $\code{daniel} \defas \record{\code{name}="Daniel", \code{course}="cs"}$ is a possible instance of the row type \type{Student}. 
+\[ \type{Employee} \defas \record{\code{name}:\type{String},\code{dept}:\type{String}} \]
+denotes a row type with two fields: name of type \type{String} and dept of type \type{String}. We use set notation to emphasise that a particular field may only appear once in a row. The record $\code{emp} \defas \record{\code{name}="John", \code{dept}="Finance"}$ is a possible instance of the row type \type{Employee}. 
 %The above row is \emph{closed}, alternatively, if a row contains a row variable $\rho$, then it is said to be \emph{open}, e.g.
 %\[
 %\type{supervisor} \defas \record{\code{name}:\type{String} \; | \; \rho} 
 %\]
 %denotes a polymorphic row. Observe that the two above types both contains the label \code{name}. 
 
-Consider a function which returns the projection of the \code{name} component and the record itself, e.g. $\code{get\_name}(r) \defas (\pi_{\code{name}}(r), r)$, where $\pi_l(r)$ is the projection of label $l$ in row $r$. This raises the question of how to type the function. One possible typing is 
+Consider a function which returns the projection of the \code{name} component and the row itself, e.g. $\code{get\_name}(r) \defas (\pi_{\code{name}}(r), r)$, where $\pi_l(r)$ is the projection of label $l$ in row $r$. This raises the question of how to type the function. One possible typing is 
 \[ \code{get\_name} : \record{\code{name}:\type{a}} \to \type{a} \times \record{\code{name}:\type{a}} \]
-The type looks innocuous, however, assuming that the type \type{Student} is a subtype of $\record{\code{name}:\type{String}}$, then 
+The type looks innocuous, however, assuming for a moment that the type \type{Employee} is a subtype of $\record{\code{name}:\type{String}}$, then 
 \[
-  \code{get\_name}(\code{daniel}) = ("Daniel", \record{\code{name}="Daniel"})
+  \code{get\_name}(\code{emp}) = ("John", \record{\code{name}="John"})
 \]
-The output lost the \code{course} field! Because subtyping subsumed the field. However using row polymorphism, we can prevent the loss of information.
+The output lost the \code{dept} field, because subtyping subsumed the field. However using row polymorphism, we can prevent the loss of information.
 The principal idea is to extend row types with a row variable $\rho$ which can be instantiated with additional fields, thus we may type $\code{get\_name}$ as
 \[ \code{get\_name} : \record{\code{name}:\type{a} \; | \; \rho} \to (a \times \record{\code{name}:\type{a} \; | \; \rho}) \]
-The row \record{\code{name}:\type{a} \; | \; \rho} is said to be \emph{open} due to the presence of $\rho$, conversely, the row \type{Student} is said to be \emph{closed}. In addition row polymorphism equip field types with a presence flag which indicating whether a field is \emph{present} or \emph{absent} \cite{Remy1993}. We will denote presence by $pre(\tau)$ and absence by $abs(\tau)$ where $\tau$ is the type of the field in question. If we attempt to apply \code{get\_name} to \type{daniel} under this typing then we get \code{(``Daniel'', daniel)} as desired. Under the hood the type system has to solve the equation 
+The row \record{\code{name}:\type{a} \; | \; \rho} is said to be \emph{open} due to the presence of $\rho$, conversely, the row \type{Employee} is said to be \emph{closed}. Additionally, row polymorphism equip field types with a presence flag which indicating whether a field is \emph{present} or \emph{absent} \cite{Remy1993}. We will denote presence by $pre(\tau)$ and absence by $abs$ where $\tau$ is the type of the field in question. If we attempt to apply \code{get\_name} to \type{emp} under this typing then we obtain \code{(``John'', emp)} as desired. Under the hood the type system has to solve the equation 
 \[ 
-\record{\code{name}:pre(\type{a}) \; | \; \rho} \sim \record{\code{name}:pre(\type{String}),\code{course}:pre(\type{String})}
+\record{\code{name}:pre(\type{a}) \; | \; \rho} \sim \record{\code{name}:pre(\type{String}),\code{dept}:pre(\type{String})}
 \]
-that is the two record types must be unified. Note that \code{get\_name} reads all fields in the input record $r$, therefore all fields must be present in the solution. The solution is to first instantiate the type variable $a$ with $\type{String}$, and then instantiate $\rho$ with the additional field $\code{course}$ of type $pre(\type{String})$. The result is a row that is structural equal to the row \type{daniel}. It is crucial that the left hand side row is open, otherwise the equation would have no solution.
+that is the two row types must be unified. The goal is to obtain a row where everything that is present on the left and right hand side are present in the solution. %Note that \code{get\_name} reads all fields in the input row $r$, therefore all fields must be present in the solution. 
+This implies that rows only can grow monotonically.
+The solution is to first instantiate the type variable $a$ with $\type{String}$, and then instantiate $\rho$ with the additional field $\code{dept}$ of type $pre(\type{String})$. The result is a row that is identical in structure to the row type \type{Employee}. It is crucial that the left hand side row is open, otherwise the equation would have no solution.
 
-As a final example, consider a function \code{graduate} which takes a record of type $\record{\code{name}:pre(a),\code{course}:\theta_1,\code{age}:\theta_2}$ as input and only reads the \code{name} field. Here the types $\theta_1$ and $\theta_2$ are used to denote that the row is polymorphic over the presence of the fields \code{course} and \code{age}. Since the \type{Student} contains field \code{name} of type \type{String} we should be able to apply \code{graduate} to the record \code{daniel} which gives rise to the following equation
+As a final example, consider the row type $\record{\code{name}:\type{String},\code{at\_job}:\theta}$, where $\theta$ denotes the field is polymorphic in whether it is present or absent. A possible instance is $\record{\code{name}="Paul"}$ because the field \code{at\_job} does not have to be present. Applying the function \code{get\_name} to the row gives rise to a similar equation:
 \[ 
-\record{\code{name}:pre(\type{a}),\code{course}:\theta_1,\code{age}:\theta_2 \; | \; \rho} \sim \record{\code{name}:pre(\type{String}),\code{course}:pre(\type{String})}
+\record{\code{name}:pre(\type{a}) \; | \; \rho} \sim \record{\code{name}:pre(\type{String}),\code{at\_job}:abs}
 \]
-Again, we unify field by field: The case for \code{name} is easy, we simply instantiate the type variable $a$ with \type{String}. Next, we instantiate $\theta_1$ with $pre(\type{String})$ because \code{course} is present on the right hand side. Finally, because \code{age} is not present on the right hand side, and not used in the function we instantiate $\theta_2$ with $abs$. This is safe because \code{age} is never accessed. 
-
-If \code{age} \emph{was} accessed then the above equation would have no solution as the left hand side would require \code{age} to be present, but as it is absent from the right hand side there would be no way to instantiate it with a concrete type.
+Again, we unify field by field: The case for \code{name} is easy, we simply instantiate the type variable $a$ with \type{String}. Next, we instantiate $\rho$ with \code{at\_job} set to $abs$.  For all practical matter the two row types
+\[ 
+\record{\code{name}:pre(\type{String})} \approxeq \record{\code{name}:pre(\type{String}),\code{at\_job}:abs}
+\] 
+are identical in structure, because \code{at\_job} is never accessed in an instance. In the remainder of the thesis we continue to use $\theta$ to denote presence polymorphism, but we omit the presence annotation \emph{pre} as we will mostly work with rows where all fields are present.

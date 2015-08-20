@@ -118,7 +118,7 @@ The type may look dubious. Basically, we have built a Monad Transformer stack wi
   \item Middle: \type{ReaderT} with read access to an environment of type \type{Inventory}.
   \item Bottom: \type{Maybe} provides exception handling capabilities.
 \end{itemize}
-Monad Transformers allow us to express something reminiscent of the ``ideal'' monadic computation that we sought after in Section \ref{sec:problem-with-monads}. It is worth noting that, now,  \type{Maybe} is employed as a monad as opposed to a ordinary type. The benefits are obvious as we get the exception handling capabilities of \type{Maybe} for ``free''.
+Monad Transformers allow us to express something reminiscent of the ``ideal'' monadic computation that we sought after in Section \ref{sec:problem-with-monads}. It is worth noting that, now,  \type{Maybe} is employed as a monad as opposed to a ordinary type. The benefits are obvious as we get the error handling capabilities of \type{Maybe} for ``free''.
 
 However, it is not entirely free as we have to introduce \code{lift} operations. The \code{lift} operations are necessary in order to work with a specific effect down the transformer stack. For example in order to use \code{ask} we have to \code{lift} once as the \type{ReaderT} is the second type in the stack. Moreover, to use the monadic capabilities of \type{Maybe} we have to \code{lift} twice because it is at the bottom of the stack. Using \code{tell} requires no \code{lift}s in this example as \type{WriterT} is the top type. 
 Consider what happens when we add yet another monad to the stack:
@@ -138,9 +138,9 @@ dispenser2 n
                            then lookup n inv 
                            else Nothing
 \end{lstlisting}
-Here we extended our model with randomness to capture the possiblilty of failure caused by the system rather than the user. The \type{RandT} monad provides random capabilities. Moreover, we added it to the top of the transformer stack. Accordingly, we now have to use an additional \code{lift}, in particular, we have to \code{lift} in order to use \code{tell} now.
+Here we extended our model with randomness to capture the possiblilty of failure caused by the system rather than the user. The \type{RandT} monad provides random capabilities. Moreover, we added it to the top of the transformer stack. Accordingly, we now have to use an additional \code{lift} operation everywhere, in particular, we have to \code{lift} in order to use \code{tell} now.
 \end{example}
-Example \ref{ex:coffee2} demonstrates that we can compose monads at the cost of lifting. We can think of a \code{lift} operation as ``peeling off a layer'' of the transformer stack. Thus the transformer stack enforce a static ordering on effects and interactions between effect layers \cite{Kiselyov2013}.
+Example \ref{ex:coffee2} demonstrates that we can compose monads at the cost of lifting. The \code{lift} operations are additional boilerplate code that become necessary, because the transformer stack enforce a static ordering on effects and interactions between effect layers \cite{Kiselyov2013}.
 
 Furthermore, the ordering leaks into the type signature which complicates modularity. For example, we may have a function which takes as input an effectful computation with type signature, say, \type{WriterT w Reader e a}.
 Now, the actual effectful computation has to have a type signature with the \emph{exact} same ordering of effects even though \type{Writer} and \type{Reader} commute, i.e. the following types are isomorphic:
@@ -173,4 +173,4 @@ ghci> runWriterT $$ runMaybeT (problem :: B ())
 When using type \type{A} we lose the result from the \code{tell} operation. Type \type{B} preserves the result.
 Hence the two monads do not commute, and as a result the ordering of effects determine the semantics of the computation.
 \end{example}
-We have seen that while we gain monad compositionality with Monad Transformers we do not get modularity.
+We have seen that, while we gain monad compositionality with Monad Transformers, we lose modularity.
