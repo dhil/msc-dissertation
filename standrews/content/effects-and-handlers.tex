@@ -1,95 +1,103 @@
 \section{Effects and handlers}
-\begin{frame}
+\begin{frame}[fragile]
   \frametitle{Effects and handlers}
   \begin{block}{Algebraic effect}
-    An effect\footnote{We are assuming the free algebra, i.e. the equationless theory} is a collection of abstract operations, e.g. 
+    An effect is a collection of abstract operations, e.g. 
     $\{ Op_i : a_i \to b_i \}$
   \end{block}
   \begin{block}{Abstract computation}
-    An abstract computation is composed from abstract operations.
+    An abstract computation is composed from abstract operations. Computations have type
+    $() \xrightarrow{\{Op_i : a_i \to b_i \; | \; \rho\}\;} c$
   \end{block}
 
   \begin{block}{Handler}
-    A handler is an interpreter. It instantiates an abstract computation with a concrete implementation.
+    A handler interprets an abstract computation $m$.
+\begin{lstlisting}[basicstyle=\small\ttfamily]
+(*\only<2-2>{\texttt{open }}*)handler(m) {
+  case Op(*$_i$*)(p(*$_i$*),k(*$_i$*))  (*$\to$*) body(*$_i$*)
+  case Return(x)  (*$\to$*) x
+}
+\end{lstlisting}
+Typing: \only<1-1>{$(() \xrightarrow{\{Op_i : a_i \to b_i\}\;} c) \to d$}\only<2-2>{$(() \xrightarrow{\{Op_i : a_i \to b_i \; | \; \rho\}\;} c) \to () \xrightarrow{\{Op_i:\alpha \; | \; \rho\}} \to d$}
   \end{block}
 \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Effects as computation trees \cite{Lindley14}}
-Operation $\textsf{Choose} : () \to \texttt{Bool}$.
+% \begin{frame}[fragile]
+%   \frametitle{Effects as computation trees \cite{Lindley14}}
+% Operation $\textsf{Choose} : () \to \texttt{Bool}$.
 
-\vspace{0.5cm}
-Picture the CPS term $\textsf{Choose}_{()}(\textsf{Choose}_{()}(2,4),\textsf{Choose}_{()}(8,16))$, e.g.
-\vspace{0.5cm}
-\begin{center}
-\begin{tikzpicture}[level distance=1.5cm,
-level 1/.style={sibling distance=3.5cm},
-level 2/.style={sibling distance=1cm}]
-%\tikzstyle{every node}=[circle,draw]
+% \vspace{0.5cm}
+% Picture the CPS term $\textsf{Choose}_{()}(\textsf{Choose}_{()}(2,4),\textsf{Choose}_{()}(8,16))$, e.g.
+% \vspace{0.5cm}
+% \begin{center}
+% \begin{tikzpicture}[level distance=1.5cm,
+% level 1/.style={sibling distance=3.5cm},
+% level 2/.style={sibling distance=1cm}]
+% %\tikzstyle{every node}=[circle,draw]
 
-\node (Root) [blue,rectangle] {Choose ()}
-    child { node[blue] (q0) {Choose ()} 
-      child { node[draw=none] (q00) {2}
-      }
-      child { node[draw=none] (q01) {4} 
-      }
-      edge from parent node [draw=none,left,xshift=-2.0,yshift=2.0] {true}
-    }
-    child { node [blue] (q1) {Choose ()}
-      child { node[draw=none] (q10) {8}
-      }
-      child { node[draw=none] (q11) {16}       
-      }
-      edge from parent node [draw=none,right,xshift=2.0,yshift=2.0] {false}
-    };
+% \node (Root) [blue,rectangle] {Choose ()}
+%     child { node[blue] (q0) {Choose ()} 
+%       child { node[draw=none] (q00) {2}
+%       }
+%       child { node[draw=none] (q01) {4} 
+%       }
+%       edge from parent node [draw=none,left,xshift=-2.0,yshift=2.0] {true}
+%     }
+%     child { node [blue] (q1) {Choose ()}
+%       child { node[draw=none] (q10) {8}
+%       }
+%       child { node[draw=none] (q11) {16}       
+%       }
+%       edge from parent node [draw=none,right,xshift=2.0,yshift=2.0] {false}
+%     };
 
-\only<2-2>{\draw[->,red,rounded corners,dashed,line width=0.7pt]
-    ($(Root) +(-1.0,0.2)$) --
-    ($(q0) +(-1.0,0.4)$) --
-    ($(q00) +(-0.3,0.0)$);}
+% \only<2-2>{\draw[->,red,rounded corners,dashed,line width=0.7pt]
+%     ($(Root) +(-1.0,0.2)$) --
+%     ($(q0) +(-1.0,0.4)$) --
+%     ($(q00) +(-0.3,0.0)$);}
 
-\only<3-3>{\draw[->,red,rounded corners,dashed,line width=0.7pt]
-    ($(Root) +(1.0,0.2)$) --
-    ($(q1) +(1.0,0.4)$) --
-    ($(q10) +(1.3,0.0)$);}
+% \only<3-3>{\draw[->,red,rounded corners,dashed,line width=0.7pt]
+%     ($(Root) +(1.0,0.2)$) --
+%     ($(q1) +(1.0,0.4)$) --
+%     ($(q10) +(1.3,0.0)$);}
 
-\only<4-5>{\draw[->,red,rounded corners,dashed,line width=0.7pt]
-    ($(Root) +(-1.0,0.2)$) --
-    ($(q0) +(-1.0,0.4)$) --
-    ($(q00)  +(-0.5,0.0)$) --
-    ($(q00)  +(-0.4,-0.35)$) --
-    ($(q00)  +(0.0,-0.5)$) --
-    ($(q00)  +(0.4,-0.35)$) --
-    ($(q00)  +(0.5,0.0)$) --
-    ($(q0)  +(-0.005,-0.3)$) --
-    ($(q01)  +(-0.35,-0.35)$) --
-    ($(q01)  +(0.0,-0.45)$) --
-    ($(q01)  +(0.35,-0.35)$) --
-    ($(q01)  +(0.4,0.0)$) --
-    ($(q0)   +(1.0,0.5)$) --
-    ($(Root) +(-0.3,-0.4)$) --
-    ($(q1)  +(-0.8,-0.1)$) --
-    ($(q10)  +(-0.5,0.0)$) --
-    ($(q10)  +(-0.4,-0.35)$) --
-    ($(q10)  +(0.0,-0.5)$) --
-    ($(q10)  +(0.4,-0.35)$) --
-    ($(q10)  +(0.5,0.0)$) --
-    ($(q1)  +(-0.005,-0.3)$) --
-    ($(q11)  +(-0.35,-0.35)$) --
-    ($(q11)  +(0.0,-0.45)$) --
-    ($(q11)  +(0.35,-0.35)$) --
-    ($(q11)  +(0.4,0.0)$);}
-\end{tikzpicture}
-\end{center}
-\only<1-1>{How should we interpret this computation?}
-\only<2-2>{$\Rightarrow$ $2 : \texttt{Int}$ (Strictly positive)}
-\only<3-3>{$\Rightarrow$ $16 : \texttt{Int}$ (depressingly pessimistic)}
-\only<4-4>{How about this?}
-\only<5-5>{$\Rightarrow [2,4,8,16] : [\texttt{Int}]$}
-\end{frame}
+% \only<4-5>{\draw[->,red,rounded corners,dashed,line width=0.7pt]
+%     ($(Root) +(-1.0,0.2)$) --
+%     ($(q0) +(-1.0,0.4)$) --
+%     ($(q00)  +(-0.5,0.0)$) --
+%     ($(q00)  +(-0.4,-0.35)$) --
+%     ($(q00)  +(0.0,-0.5)$) --
+%     ($(q00)  +(0.4,-0.35)$) --
+%     ($(q00)  +(0.5,0.0)$) --
+%     ($(q0)  +(-0.005,-0.3)$) --
+%     ($(q01)  +(-0.35,-0.35)$) --
+%     ($(q01)  +(0.0,-0.45)$) --
+%     ($(q01)  +(0.35,-0.35)$) --
+%     ($(q01)  +(0.4,0.0)$) --
+%     ($(q0)   +(1.0,0.5)$) --
+%     ($(Root) +(-0.3,-0.4)$) --
+%     ($(q1)  +(-0.8,-0.1)$) --
+%     ($(q10)  +(-0.5,0.0)$) --
+%     ($(q10)  +(-0.4,-0.35)$) --
+%     ($(q10)  +(0.0,-0.5)$) --
+%     ($(q10)  +(0.4,-0.35)$) --
+%     ($(q10)  +(0.5,0.0)$) --
+%     ($(q1)  +(-0.005,-0.3)$) --
+%     ($(q11)  +(-0.35,-0.35)$) --
+%     ($(q11)  +(0.0,-0.45)$) --
+%     ($(q11)  +(0.35,-0.35)$) --
+%     ($(q11)  +(0.4,0.0)$);}
+% \end{tikzpicture}
+% \end{center}
+% \only<1-1>{How should we interpret this computation?}
+% \only<2-2>{$\Rightarrow$ $2 : \texttt{Int}$ (Strictly positive)}
+% \only<3-3>{$\Rightarrow$ $16 : \texttt{Int}$ (depressingly pessimistic)}
+% \only<4-4>{How about this?}
+% \only<5-5>{$\Rightarrow [2,4,8,16] : [\texttt{Int}]$}
+% \end{frame}
 
 \begin{frame}
-  \frametitle{A game with sticks}
+  \frametitle{Nim: A game with sticks}
   \begin{center}
     \begin{figure}
       \includegraphics[scale=0.3]{sticks.jpg}

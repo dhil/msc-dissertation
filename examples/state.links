@@ -1,0 +1,50 @@
+# State examples
+# links> runState(0, scomp);
+# links> runStateWithLog(0, scomp);
+
+# A stateful computation 
+fun scomp() {
+    var s = do Get();
+    do Put(s + 1);
+    var s = do Get();
+    do Put(s + s);
+    do Get()
+}
+
+
+# The open state handler
+open handler openState(m) {
+     case Get(_,k)  -> fun(s) { k(s)(s) }
+     case Put(p,k)  -> fun(s) { k(())(p) }
+     case Return(x) -> fun(s) { x }
+}
+
+# This handler logs state changes
+open handler putLogger(m) {
+     case Put(p,k)  ->  { do LogPut(p); do Put(p); k(()) }
+     case Return(x) -> x
+}
+
+# This handler maintains the logged state
+open handler logState(m) {
+     case LogPut(x,k) -> { var s = k(());
+                           var xs = second(s);
+			   (first(s), (x :: xs))
+                         }
+     case Return(x)    -> (x, [])			 
+}
+
+# The force handler
+handler force(m) {
+	case Return(x) -> x
+}
+
+
+# Two convenient runner functions
+fun runState(s0, m) {
+    force(openState(m))(s0)
+}
+
+fun runStateWithLog(s0, m) {
+   runState(s0, putLoggerR((putLogger(m))))
+}
