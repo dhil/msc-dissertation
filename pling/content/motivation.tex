@@ -1,0 +1,157 @@
+\begin{frame}
+  \frametitle{What this talk is about}
+  \begin{center}
+    \emph{Handlers for algebraic effects provide a compelling alternative to monads as a basis for effectful programming.}
+  \end{center}
+\begin{itemize}
+  \item \textbf{Key idea:} Separate effect signatures from their implementation.
+  \item \textbf{``The effect'':} High-degree of modularity.
+\end{itemize}
+{\footnotesize{Definitions will follow later\dots}}
+\end{frame}
+
+\section{PART 1: Effectively, it's a problem}
+
+\begin{frame}
+  \frametitle{Programs are inherently effectful}
+  Programs may\dots
+  \begin{itemize}
+    \item \dots halt prematurely
+    \item \dots diverge
+    \item \dots be stateful (e.g. modify a global state)
+    \item \dots communicate via a network
+    \item \dots print to standard out
+  \end{itemize}
+  A pure\footnote{By pure we mean a program that has no effects.} program is not much fun.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Fundamental different approaches to effects}
+  \begin{description}
+    \item[\alert<1->{Imperative}] Repeatedly performs implicit effects on shared global state.
+    \item[\alert<1->{Functional}] Encapsulates effects in a computational context.
+  \end{description}
+  \uncover<2->{This talk is oriented around \emph{functional} programming with effects.}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Effectful computations (I)}
+  \begin{align*}
+    a \to b && \text{Mathematical pure function}\\
+    a \to b && \text{C/C++ (impure) function}\\
+    a \to b && \text{ML (impure) function}
+  \end{align*}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Let's be explicit about effects}
+  \begin{block}{Effect annotation}
+    An effect annotation gives a static description of the potential run-time behaviour of a computation.
+  \end{block}
+  Benefits
+  \begin{itemize}
+    \item Serves as documentation (clarity)
+    \item Compiler can apply specific optimisations
+    \item Possible to reason more precisely about programs
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Enter the Monad}
+  \begin{center}
+    ``\textit{Shall I be pure or impure?}''
+    \begin{figure}
+      \includegraphics[scale=0.3]{figures/lambdaman.png}
+      \caption{Philip Wadler aka. Lambda Man}
+    \end{figure}
+  \end{center}
+\begin{itemize}
+  \item The Essence of Functional Programming \cite{Wadler1992}
+  \item The Marriage of Effects and Monads \cite{Wadler2003}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Effectful computations (II)}
+  \begin{align*}
+    a \to b && \text{Mathematical pure function}\\
+    a \to b && \text{C/C++ (impure) function}\\
+    a \to b && \text{ML (impure) function}\\
+    \hline
+    a \to \alert<2->{m}\, b && \text{Haskell impure function}
+  \end{align*}
+  \uncover<2->{$\alert<2->{m}$ can be considered an effect annotation}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Monads}
+  \begin{definition}
+    A monad is a triple $(m, return, bind)$ where
+    \begin{itemize}
+      \item $m$ is a type constructor
+      \item $return : a \to m\, a$
+      \item $bind   : m\, a \to (a \to m\, b) \to m\, b$
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Great! Many monads, many effects}
+  A couple of monads and their ``effect interpretation''
+  \begin{description}
+    \item[\alert<1->{IO $a$}] May perform I/O, returns $a$
+    \item[\alert<1->{Reader $r$ $a$}] May read from $r$, returns $a$
+    \item[\alert<1->{Writer $w$ $a$}] May write to $w$, returns $a$
+    \item[\alert<1->{State $s$ $a$}] May read/write some state $s$, returns $a$
+    \item[\alert<1->{Maybe $a$}] May fail, returns $a$ on success
+  \end{description}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Effectful computations (III)}
+  \begin{align*}
+    a &\to b && \text{Mathematical pure function}\\
+    a &\to b && \text{C/C++ (impure) function}\\
+    a &\to b && \text{ML (impure) function}\\
+    \hline
+    a &\to m_1\,m_2\, b && \text{Haskell impure function}\\
+    & \not\simeq\\
+    a &\to m_2\,m_1\, b
+  \end{align*}
+%  Sadly, monads do not compose well. Recall the signature of bind:
+%  \[ \alert<1->{m}\, a \to (a \to \alert<1->{m}\, b) \to \alert<1->{m}\, b \]
+%  \alert<1->{m} is fixed throughout the computation!
+\end{frame}
+
+\begin{frame}
+  \frametitle{IO Monad is equivalent to a calzone pizza}
+  \begin{center}   
+    \begin{figure}
+      \includegraphics[scale=0.9]{figures/calzone.jpg}
+      \caption{``There's only meat sauce inside'', they said, but you can't really be sure.}
+    \end{figure}
+  \end{center}  
+\end{frame}
+
+\begin{frame}
+  \frametitle{The importance of effect ordering \cite{O'Sullivan2008}}
+  Two signatures\footnote{Elided details about Monad Transformers}:
+  \begin{itemize}
+    \item $A \defas \texttt{WriterT String Maybe}$
+      \begin{itemize}
+        \item Returns nothing on failure
+      \end{itemize}
+    \item $B \defas \texttt{MaybeT (Writer String)}$
+      \begin{itemize}
+        \item Returns a pair on failure
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+% \begin{frame}
+%   \frametitle{Problem statement}
+%   \begin{block}{Problem statement}
+%     \emph{How may we achieve a programming model for modular, composable and unordered effects?}
+%   \end{block}
+%   Proposed solution: Handlers for algebraic effects using row polymorphism!
+% \end{frame}

@@ -1,0 +1,92 @@
+%% Packages initialisation
+\documentclass[10pt,compress]{beamer}
+\usepackage[utf8]{inputenc}               % Enable UTF-8 compatible typing
+\usepackage{hyperref}                     % Interactive PDF
+\usepackage{mathtools}                    % Displaying math formulas etc.
+\usepackage{tikz}                         % Drawing
+\usetikzlibrary{trees}
+\usetikzlibrary{calc}
+\usepackage{listings}                     % Source code listings
+
+\useoutertheme[numbering=fraction]{metropolis}
+\usetheme[everytitleformat=regular]{m}
+\metroset{block=fill}
+%\metroset[outer/number=fraction]
+
+%% Hide navigation buttons
+\beamertemplatenavigationsymbolsempty
+
+%% Configure lstlisting environment
+\lstdefinestyle{compact}{
+    basicstyle=\ttfamily\tiny,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=none,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    escapeinside={(*}{*)}
+}
+
+\lstdefinestyle{spacey}{
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=none,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    escapeinside={(*}{*)}
+}
+
+\lstset{style=compact}
+
+%% "Defined as" macro
+\newcommand\defas{\mathrel{\overset{\makebox[0pt]{\mbox{\normalfont\tiny\sffamily def}}}{=}}}
+
+%% Meta information
+\author{Daniel Hillerström\\\footnotesize{\href{mailto:daniel.hillerstrom@ed.ac.uk}{daniel.hillerstrom@ed.ac.uk}\\\href{http://homepages.inf.ed.ac.uk/s1467124/}{http://homepages.inf.ed.ac.uk/s1467124/}}}
+\title{Programming with Effect Handlers in Links}
+\subtitle{\textit{PLInG, Autumn 2015, University of Edinburgh}}
+\institute[University of Edinburgh]{School of Informatics\\The University of Edinburgh}
+\date{\today}
+
+%% Load slides
+\begin{document}
+% Front slide
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% Disclaimer slide
+\begingroup 
+\setbeamercolor{background canvas}{bg=black}
+\begin{frame}[plain]
+\begin{center}
+  {\color{red}{\Huge{\textbf{WARNING}}}}
+\end{center}
+\begin{center}
+{\color{white}{This talk may contain traces of jargon such as \emph{monads}, \emph{effects}, \emph{algebras} and \emph{handlers}. However the following code examples in this talk may be performed at home. }}
+\end{center}
+\end{frame}
+\endgroup
+
+% Load subsequent slides
+\input{content/index}
+
+% Bibliography
+\nocite{*}
+\bibliographystyle{unsrt}
+\begin{frame}
+  \frametitle{References}
+  \bibliography{references}
+\end{frame}
+\end{document}
