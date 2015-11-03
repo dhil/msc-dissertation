@@ -1,4 +1,4 @@
-\section{PART 2: Exit the Monad, Enter the Handler}
+\section{PART 2: Handlers and Effects}
 \begin{frame}
   \frametitle{Algebraic effects}
   \begin{columns}
@@ -19,17 +19,19 @@
       \end{center}
     \end{column}
   \end{columns}
+  \begin{center}
+    Adequacy for Algebraic Effects (2001)
+  \end{center}
 \end{frame}
 
 \begin{frame}
   \frametitle{Algebraic effects and computations}
-  \begin{definition}{Algebraic effect}
-    An algebraic effect is a collection of abstract operations, e.g. 
-    $\{ Op_i : a_i \to b_i \}$
+  \begin{definition}[Algebraic effect]
+    An algebraic effect is a collection of abstract operations. 
+    For example $Choice \defas \{ Choose : \text{Bool} \}$.
   \end{definition}
-  \begin{definition}{Abstract computation}
-    An abstract computation is composed from abstract operations. Computations have type
-    %$() \xrightarrow{\{Op_i : a_i \to b_i \; | \; \rho\}\;} c$
+  \begin{definition}[Abstract computation]
+    An abstract computation is composed from abstract operations.
   \end{definition}
 
 %   \begin{block}{Handler}
@@ -42,6 +44,47 @@
 % \end{lstlisting}
 % Typing: \only<1-1>{$(() \xrightarrow{\{Op_i : a_i \to b_i\}\;} c) \to d$}\only<2-2>{$(() \xrightarrow{\{Op_i : a_i \to b_i \; | \; \rho\}\;} c) \to () \xrightarrow{\{Op_i:\alpha \; | \; \rho\}} \to d$}
 %   \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Effect handlers}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{center}
+        \begin{figure}
+          \includegraphics[scale=0.3]{figures/gordonplotkin.png}
+          \caption{Gordon Plotkin}
+        \end{figure}
+      \end{center}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{center}
+        \begin{figure}
+          \includegraphics[scale=0.3]{figures/johnpower.png}
+          \caption{Matija Pretnar}
+        \end{figure}
+      \end{center}
+    \end{column}
+  \end{columns}
+  \begin{center}
+      Handling Algebraic Effects (2003)
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Effect handler}
+  \begin{definition}[Handler]
+    A handler interprets an abstract computation.
+  \end{definition}
+  \begin{block}{An example}
+    Essentially, a handler pattern-matches on operations occurring in a computation $m$:
+    \begin{lstlisting}[style=spacey]
+  handler choice(m) {
+    case Choose(k) -> ...
+    case Return(x) -> ...
+  }
+    \end{lstlisting}
+  \end{block}
 \end{frame}
 
 % \begin{frame}[fragile]
@@ -117,6 +160,21 @@
 % \only<4-4>{How about this?}
 % \only<5-5>{$\Rightarrow [2,4,8,16] : [\texttt{Int}]$}
 % \end{frame}
+
+\section{PART 3: Effect Handlers in Links}
+% Disclaimer slide
+\begingroup 
+\setbeamercolor{background canvas}{bg=black}
+\begin{frame}[plain]
+\begin{center}
+  {\color{red}{\Huge{\textbf{WARNING}}}}
+\end{center}
+\begin{center}
+{\color{white}{The following code examples may be reproduced at home.}}
+\end{center}
+\end{frame}
+\endgroup
+
 
 \begin{frame}
   \frametitle{Nim: A game with sticks}

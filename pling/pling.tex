@@ -8,6 +8,7 @@
 \usetikzlibrary{calc}
 \usepackage{listings}                     % Source code listings
 
+\useinnertheme[sectionpage=none]{metropolis}
 \useoutertheme[numbering=fraction]{metropolis}
 \usetheme[everytitleformat=regular]{m}
 \metroset{block=fill}
@@ -66,26 +67,13 @@
   \titlepage
 \end{frame}
 
-% Disclaimer slide
-\begingroup 
-\setbeamercolor{background canvas}{bg=black}
-\begin{frame}[plain]
-\begin{center}
-  {\color{red}{\Huge{\textbf{WARNING}}}}
-\end{center}
-\begin{center}
-{\color{white}{This talk may contain traces of jargon such as \emph{monads}, \emph{effects}, \emph{algebras} and \emph{handlers}. However the following code examples in this talk may be performed at home. }}
-\end{center}
-\end{frame}
-\endgroup
-
 % Load subsequent slides
 \input{content/index}
 
 % Bibliography
 \nocite{*}
 \bibliographystyle{unsrt}
-\begin{frame}
+\begin{frame}[allowframebreaks]
   \frametitle{References}
   \bibliography{references}
 \end{frame}
