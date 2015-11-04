@@ -1,14 +1,14 @@
-\begin{frame}
-  \frametitle{What this talk is about}
-  \begin{center}
-    \emph{Handlers for \alert<1->{algebraic effects} provide a compelling alternative to \alert<1->{monads} as a basis for \alert<1->{effectful programming}.}
-  \end{center}
-\begin{itemize}
-  \item \textbf{Key idea:} Separate effect signatures from their implementation.
-  \item \textbf{Consequent:} High-degree of modularity.
-\end{itemize}
-{\footnotesize{Definitions will follow later\dots}}
-\end{frame}
+% \begin{frame}
+%   \frametitle{What this talk is about}
+%   \begin{center}
+%     \emph{Handlers for \alert<1->{algebraic effects} provide a compelling alternative to \alert<1->{monads} as a basis for \alert<1->{effectful programming}.}
+%   \end{center}
+% \begin{itemize}
+%   \item \textbf{Key idea:} Separate effect signatures from their implementation.
+%   \item \textbf{Consequent:} High-degree of modularity.
+% \end{itemize}
+% {\footnotesize{Definitions will follow later\dots}}
+% \end{frame}
 
 \section{PART 1: The problem}
 
@@ -35,7 +35,7 @@
 % \end{frame}
 
 \begin{frame}
-  \frametitle{Effectful computations (I)}
+  \frametitle{Function signatures (I)}
   \begin{align*}
     f : \mathbb{Z} \to \mathbb{Z} && \text{Mathematical pure function}\\
     \text{int } f(\text{int } x)   && \text{C/C++ (impure) function}\\
@@ -73,16 +73,17 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Effectful computations (II)}
+  \frametitle{Function signatures (II)}
   \begin{align*}
     &f : \mathbb{Z} \to \mathbb{Z} && \text{Mathematical pure function}\\
     &\text{int } f(\text{int } x)   && \text{C/C++ (impure) function}\\
     &f : \text{int} \to \text{int} && \text{ML (impure) function}\\
     \hline
     &f : \text{Int} \to \text{\alert<2-2>{IO} Int} && \text{Haskell effect annotation}\\
-    &\uncover<3->{\text{int } f(\text{int } x)\; \text{throws Exception} && \text{Java effect annotation}}
+    &\uncover<3->{\text{int } f(\text{int } x)\; \text{throws Exception} && \text{Java effect annotation}}\\
+    &\uncover<4->{f : (\text{Int}) \xrightarrow{\{Read:\text{String}\;|\;\rho\}\,} \text{Int} && \text{Links effect annotations}}
   \end{align*}
-  \uncover<2-2>{\alert<2->{IO} can be considered an effect annotation}
+  \uncover<2-2>{\alert<2->{IO} can be considered an effect annotation. However, sadly, different monads do not compose well.}
 \end{frame}
 
 % \begin{frame}
@@ -97,15 +98,15 @@
 %   \end{definition}
 % \end{frame}
 
-\begin{frame}
-  \frametitle{Great! Many monads, many effects}
-  A couple of monads and their ``effect interpretation''
-  \begin{description}
-    \item[\alert<1->{IO $a$}] May perform I/O, returns $a$
-    \item[\alert<1->{Reader $r$ $a$}] May read from $r$, returns $a$
-    \item[\alert<1->{Writer $w$ $a$}] May write to $w$, returns $a$
-    \item[\alert<1->{State $s$ $a$}] May read/write some state $s$, returns $a$
-    \item[\alert<1->{Maybe $a$}] May fail, returns $a$ on success
-  \end{description}
-  Sadly, monads do not compose well.
-\end{frame}
+% \begin{frame}
+%   \frametitle{Great! Many monads, many effects}
+%   A couple of monads and their ``effect interpretation''
+%   \begin{description}
+%     \item[\alert<1->{IO $a$}] May perform I/O, returns $a$
+%     \item[\alert<1->{Reader $r$ $a$}] May read from $r$, returns $a$
+%     \item[\alert<1->{Writer $w$ $a$}] May write to $w$, returns $a$
+%     \item[\alert<1->{State $s$ $a$}] May read/write some state $s$, returns $a$
+%     \item[\alert<1->{Maybe $a$}] May fail, returns $a$ on success
+%   \end{description}
+%   Sadly, monads do not compose well.
+% \end{frame}
