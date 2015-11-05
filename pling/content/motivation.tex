@@ -68,7 +68,7 @@
   \end{center}
 \begin{itemize}
   \item The Essence of Functional Programming (1992)
-  \item The Marriage of Effects and Monads (1998/2003)
+  \item The Marriage of Effects and Monads (with Peter Thiemann, 2003)
 \end{itemize}
 \end{frame}
 
@@ -81,7 +81,7 @@
     \hline
     &f :: \text{Int} \to \text{IO Int} && \text{Haskell effect annotation}\\
     &\uncover<3->{\text{int } f(\text{int } x)\; \text{throws IOException} && \text{Java effect annotation}}\\
-    &\uncover<4->{f : (\text{Int}) \xrightarrow{\{Read:\text{String}\;|\;\rho\}\,} \text{Int} && \text{Links effect annotations}}
+    &\uncover<4->{f : (\text{Int}) \xrightarrow{\{Read:\text{String},Write:\text{String}\to ()\}\,} \text{Int} && \text{Links effect annotation}}
   \end{align*}
 \end{frame}
 
