@@ -75,15 +75,14 @@
 \begin{frame}
   \frametitle{Function signatures (II)}
   \begin{align*}
-    &f : \mathbb{Z} \to \mathbb{Z} && \text{Mathematical pure function}\\
+    &f : \mathbb{Z} \to \mathbb{Z}  && \text{Mathematical pure function}\\
     &\text{int } f(\text{int } x)   && \text{C/C++ (impure) function}\\
-    &f : \text{int} \to \text{int} && \text{ML (impure) function}\\
+    &f : \text{int} \to \text{int}  && \text{ML (impure) function}\\
     \hline
-    &f : \text{Int} \to \text{\alert<2-2>{IO} Int} && \text{Haskell effect annotation}\\
-    &\uncover<3->{\text{int } f(\text{int } x)\; \text{throws Exception} && \text{Java effect annotation}}\\
+    &f :: \text{Int} \to \text{IO Int} && \text{Haskell effect annotation}\\
+    &\uncover<3->{\text{int } f(\text{int } x)\; \text{throws IOException} && \text{Java effect annotation}}\\
     &\uncover<4->{f : (\text{Int}) \xrightarrow{\{Read:\text{String}\;|\;\rho\}\,} \text{Int} && \text{Links effect annotations}}
   \end{align*}
-  \uncover<2-2>{\alert<2->{IO} can be considered an effect annotation. However, sadly, different monads do not compose well.}
 \end{frame}
 
 % \begin{frame}

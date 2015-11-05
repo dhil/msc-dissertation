@@ -28,7 +28,7 @@
   \frametitle{Algebraic effects and computations}
   \begin{definition}[Algebraic effect]
     An algebraic effect is a collection of abstract operations. 
-    For example $Choice \defas \{ Choose : \text{Bool} \}$.
+    For example $State \defas \{ Get : s, Put : s \to () \}$.
   \end{definition}
   \begin{definition}[Abstract computation]
     An abstract computation is composed from abstract operations.
@@ -79,8 +79,9 @@
   \begin{block}{An example}
     Essentially, a handler pattern-matches on operations occurring in a computation $m$:
     \begin{lstlisting}[style=spacey]
-  handler choice(m) {
-    case Choose(k) -> ...
+  handler state(m) {
+    case Get(k)    -> ...
+    case Put(s,k)  -> ...
     case Return(x) -> ...
   }
     \end{lstlisting}
