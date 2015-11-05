@@ -18,11 +18,20 @@
   \begin{itemize}
     \item \dots halt prematurely
     \item \dots diverge
-    \item \dots be stateful (e.g. modify a global state)
+    \item \dots be stateful (e.g. allocating memory, throwing exceptions)
     \item \dots communicate via a network
     \item \dots print to standard out
   \end{itemize}
   A pure\footnote{By pure we mean a program that has no effects.} program is not much fun.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Pure vs. impure}
+  \begin{center}
+    \begin{figure}
+      \alt<2->{\includegraphics{figures/impure.png}}{\includegraphics{figures/pure.png}}
+    \end{figure}
+  \end{center}
 \end{frame}
 
 % \begin{frame}
@@ -38,6 +47,7 @@
   \frametitle{Function signatures (I)}
   \begin{align*}
     f : \mathbb{Z} \to \mathbb{Z} && \text{Mathematical pure function}\\
+\hline
     \text{int } f(\text{int } x)   && \text{C/C++ (impure) function}\\
     f : \text{int} \to \text{int} && \text{ML (impure) function}
   \end{align*}
@@ -76,6 +86,7 @@
   \frametitle{Function signatures (II)}
   \begin{align*}
     &f : \mathbb{Z} \to \mathbb{Z}  && \text{Mathematical pure function}\\
+\hline
     &\text{int } f(\text{int } x)   && \text{C/C++ (impure) function}\\
     &f : \text{int} \to \text{int}  && \text{ML (impure) function}\\
     \hline

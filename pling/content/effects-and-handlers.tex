@@ -1,6 +1,7 @@
 \section{PART 2: Handlers and Effects}
 \begin{frame}
   \frametitle{Algebraic effects}
+  Algebraic effects give us a modular way of describing multiple effects.
   \begin{columns}
     \begin{column}{0.5\textwidth}
       \begin{center}
@@ -48,6 +49,7 @@
 
 \begin{frame}
   \frametitle{Effect handlers}
+  Effect handlers assign a particular meaning (semantics) to algebraic effects.
   \begin{columns}
     \begin{column}{0.5\textwidth}
       \begin{center}
@@ -80,9 +82,9 @@
     Essentially, a handler pattern-matches on operations occurring in a computation $m$:
     \begin{lstlisting}[style=spacey]
   handler state(m) {
-    case Get(k)    -> ...
-    case Put(s,k)  -> ...
-    case Return(x) -> ...
+    case Get    -> ...
+    case Put(s) -> ...
+    ...
   }
     \end{lstlisting}
 Recall $State \defas \{ Get : s, Put : s \to () \}$
@@ -188,7 +190,7 @@ In other words, computations are thunks.
 \end{frame}
 
 \begin{frame}
-  \frametitle{Nim: A game with sticks}
+  \frametitle{Handlers in action: Nim -- A game with sticks}
   \begin{center}
     \begin{figure}
       \includegraphics[scale=0.3]{sticks.jpg}
